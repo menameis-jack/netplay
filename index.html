@@ -100,6 +100,10 @@ html.touchy .q li,html.touchy .board li{padding:12px}
 .seg.fl{flex-wrap:wrap;margin:8px 0}
 .seg.fl button{flex:1 0 auto;padding:9px 10px}
 .pill{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--cork);color:var(--cork-ink);white-space:nowrap}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);max-width:92vw;background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:99;box-shadow:0 6px 24px rgba(0,0,0,.25);display:none;text-align:center}
+.lockbox{border:1.5px dashed var(--line);border-radius:14px;padding:14px;margin-top:14px;background:var(--surface)}
+.lockbox b{display:block;margin-bottom:4px}
+.procode{width:100%;min-height:74px;font:12px/1.35 ui-monospace,Menlo,Consolas,monospace;border:1.5px solid var(--line);border-radius:10px;padding:8px;background:var(--bg);color:var(--ink);box-sizing:border-box;resize:vertical}
 .credit{font-size:12px;color:var(--mute);margin:-8px 0 14px;line-height:1.4}
 .lv{font-size:11px;font-weight:700;margin-left:6px;padding:1px 6px;border-radius:99px;background:var(--line);color:var(--ink);vertical-align:middle;white-space:nowrap}
 .court .lv{background:var(--ov1);color:var(--court-ink)}
@@ -142,15 +146,32 @@ button.armed{background:var(--danger)!important;color:#fff!important;border-colo
 .board .wl{white-space:nowrap;font-size:14px}
 .board .wl b{font-size:17px}
 .hist{margin:0;padding-left:18px;color:var(--mute);font-size:14px}
+.fbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.fbtns button{margin:0;padding:11px 8px;font-size:14px}
+#fpage{position:fixed;inset:0;z-index:60;background:var(--bg);color:var(--ink);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#fpage[hidden]{display:none}
+#fpage .in{max-width:680px;margin:0 auto;padding:14px 16px 40px}
+#fpage h2{font-size:22px;margin:10px 0 4px}
+#fpage .sub{color:var(--mute);font-size:14px;margin:0 0 14px}
+#fpage ol{margin:0;padding:0;list-style:none;counter-reset:f;display:grid;gap:8px}
+#fpage li{counter-increment:f;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px 10px 42px;position:relative;font-size:15px;line-height:1.4}
+#fpage li::before{content:counter(f);position:absolute;left:12px;top:10px;font-weight:800;color:var(--mute)}
+#fpage li small{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+#fpage .top{display:flex;gap:8px;align-items:center;position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:2}
+#fpage .top button{margin:0}
+#fpage .prices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+#fpage .prices a{text-align:center;text-decoration:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>NetPlay Queue</h1>
+  <h1 id="apptitle">NetPlay Queue</h1>
   <p class="credit">Designed by MeNAMEis • © 2026</p>
+  <div class="fbtns"><button type="button" class="ghost" data-act="pagefree">Free version features</button><button type="button" class="btn" data-act="pagepro">Pro version features</button></div>
   <div id="app"></div>
 </div>
+<div id="fpage" role="dialog" aria-modal="true" aria-label="Features" hidden></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -189,10 +210,10 @@ var LV=["Beginner/Novice","Intermediate","Advance","Open"],SH=["B","I","A","O"];
 var LSET={mxa:[2],mxi:[1],mxu:[1,2],mxl:[0,1],mxb:[0],mna:[2],wda:[2],mnu:[1,2],wdu:[1,2],opl:[0,1,2,3]};
 var BASE={mxa:"md",mxi:"md",mxu:"md",mxl:"md",mxb:"md",mna:"mn",wda:"wd",mnu:"mn",wdu:"wd",opl:"op"};
 function bs(c){return BASE[c]||c}
-var CATS=[["md","Mixed Doubles (XD)","Needs one woman and one man on each team."],["mxa","Mixed Doubles – Advanced Only","Needs one woman and one man on each team, all Advance level."],["mxi","Mixed Doubles – Intermediate","Needs one woman and one man on each team, all Intermediate level."],["mxu","Mixed Doubles – Upper (Intermediate & Advanced)","Needs one woman and one man on each team, Intermediate or Advance level."],["mxl","Mixed Doubles – Lower (Beginner & Intermediate)","Needs one woman and one man on each team, Beginner/Novice or Intermediate level."],["mxb","Mixed Doubles – Beginner & Low-Intermediate","Needs one woman and one man on each team, all Beginner/Novice level."],["mn","Men’s Doubles (MD)","Needs four men."],["mna","Men’s Doubles – Advanced Only","Needs four men, all Advance level."],["wd","Women’s Doubles (WD)","Needs four women."],["wda","Women’s Doubles – Advanced Only","Needs four women, all Advance level."],["op","Open / Any","Needs any four players."]];
+var CATS=[["md","Mixed Doubles (XD)","Needs one woman and one man on each team, any level."],["mxa","Mixed Doubles – Advanced Only","Needs one woman and one man on each team, all Advance level."],["mxi","Mixed Doubles – Intermediate","Needs one woman and one man on each team, all Intermediate level."],["mxu","Mixed Doubles – Upper (Intermediate & Advanced)","Needs one woman and one man on each team, Intermediate or Advance level."],["mxl","Mixed Doubles – Lower (Beginner & Intermediate)","Needs one woman and one man on each team, Beginner/Novice or Intermediate level."],["mxb","Mixed Doubles – Beginner & Low-Intermediate","Needs one woman and one man on each team, all Beginner/Novice level."],["mn","Men’s Doubles (MD)","Needs four men, any level."],["mna","Men’s Doubles – Advanced Only","Needs four men, all Advance level."],["wd","Women’s Doubles (WD)","Needs four women, any level."],["wda","Women’s Doubles – Advanced Only","Needs four women, all Advance level."],["op","Open / Any","Needs any four players."]];
 CATS.push(["mnu","Men’s Doubles (MD) - Intermediate & Advance","Needs four men, Intermediate or Advance level."],["wdu","Women’s Doubles (WD) - Intermediate & Advance","Needs four women, Intermediate or Advance level."],["opl","Mixed Doubles (MD/WD/XD) - All levels","Needs any four players, any level."]);
 CATS.forEach(function(c){if(c[0]==="mxu")c[1]="Mixed Doubles (XD) - Intermediate & Advance";if(c[0]==="mxa")c[1]="Mixed Doubles (XD) - Advanced Only";if(c[0]==="mna")c[1]="Men’s Doubles (MD) - Advanced Only";if(c[0]==="wda")c[1]="Women’s Doubles (WD) - Advanced Only"});
-var SHOW=["opl","mnu","wdu","mxu","mna","wda","mxa"],MIG={md:"mxu",mn:"mnu",wd:"wdu",op:"opl",mxi:"mxu",mxl:"opl",mxb:"opl"};
+var SHOW=["md","wd","mn","wdu","mnu","mxu","wda","mna","mxa"],MIG={op:"md",opl:"md",mxi:"mxu",mxl:"md",mxb:"md"};
 var SL=["Team A: choose player 1","Team A: choose player 2","Team B: choose player 1","Team B: choose player 2"];
 var S=null,UNDO=[];
 try{S=JSON.parse(localStorage.getItem("shuttle-q3"))}catch(e){}
@@ -204,7 +225,7 @@ if(!S||!S.courts){
 function labels(){var L=String(S.cn||"").split(",").map(function(x){return x.trim()}).filter(Boolean).filter(function(x,i,a){return a.indexOf(x)===i}).slice(0,12);return L.length?L:["1"]}
 function lab(i){return labels()[i]||String(i+1)}
 function ens(){if(!S.lv3){S.pl.forEach(function(p){p.l=p.l<=1?p.l:(p.l===2?1:2)});if(S.lvl!=="all")S.lvl=String(+S.lvl<=1?+S.lvl:(+S.lvl===2?1:2));S.nl=1;S.lv3=1}
-  if(!S.cn){S.cn=[];for(var i=1;i<=(S.nc||2);i++)S.cn.push(i);S.cn=S.cn.join(", ")}S.nc=labels().length;S.courts.forEach(function(c){if(SHOW.indexOf(c.cat)<0)c.cat=MIG[c.cat]||"opl"});if(!S.gd)S.gd=today();if(S.lim==null)S.lim="";if(!S.g)S.g=[];if(!S.cf)S.cf={sym:"₱",sh:"",ch:"",mode:"game"};while(S.courts.length<S.nc)S.courts.push({cat:"opl",sel:["","","",""],run:null,keep:[],s:0,last:null,msg:""})}
+  if(!S.cn){S.cn=[];for(var i=1;i<=(S.nc||2);i++)S.cn.push(i);S.cn=S.cn.join(", ")}S.nc=labels().length;S.courts.forEach(function(c){if(SHOW.indexOf(c.cat)<0)c.cat=MIG[c.cat]||"md"});if(!S.gd)S.gd=today();if(S.lim==null)S.lim="";if(!S.g)S.g=[];if(!S.cf)S.cf={sym:"₱",sh:"",ch:"",mode:"game"};while(S.courts.length<S.nc)S.courts.push({cat:"md",sel:["","","",""],run:null,keep:[],s:0,last:null,msg:""})}
 function save(){try{localStorage.setItem("shuttle-q3",JSON.stringify(S))}catch(e){}}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function snap(){UNDO.push(JSON.stringify(S));if(UNDO.length>30)UNDO.shift()}
@@ -360,6 +381,7 @@ function audHtml(){
   return'<details style="margin-top:10px"><summary class="hint" style="cursor:pointer">Audit log ('+a.length+')</summary><ul class="q" style="margin-top:6px">'+a.slice(0,40).map(function(x){return'<li style="display:block"><b>'+esc(x.n)+'</b>: '+esc(x.a)+(x.x?" "+esc(x.x):"")+'<div class="hint" style="margin:0">'+dtStr(x.t)+' '+tmStr(x.t)+', by '+esc(x.by||"-")+'</div></li>'}).join("")+'</ul></details>';
 }
 function payHtml(){
+  if(!PRO)return'<div class="lockbox"><b>'+ic("coins")+'Payments (Pro)</b><p class="hint" style="margin:0 0 8px">Track who paid, record payments and export payment reports with NetPlay Pro.</p><button class="ghost" data-act="gopro">Unlock with a Pro code</button></div>';
   S.pay=S.pay||{};S.led=S.led||[];fixU();S.pl.forEach(pr);Object.keys(S.pay).forEach(function(k){if(!P(k))delete S.pay[k]});
   var t=ptot(),ed=canEdit(),f=S.pf||"all";
   function card(x){return'<div class="pc"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>'}
@@ -416,6 +438,66 @@ function exportRankPdf(){
     }});
   saveFile("netplay-games-played-ranking-"+(S.gd||"game")+".pdf",doc.output("blob"),"rkmsg");
 }
+var PRO=false,PROI=null,PUBK={"key_ops":["verify"],"ext":true,"kty":"EC","x":"qF0pY-JGSvmp0yJ80quA4KAnCxejelwjw8eSQUG9NLo","y":"0HZSW3DoPFnJHGRQIR-7NR9huUeAzKkyuemIgerGOlo","crv":"P-256"},FREE_COURTS=5,FREE_PLAYERS=99999,PROCATS=["mnu","wdu","mxu","mna","wda","mxa"],PRO_MAIL="netplayqueue@gmail.com",PRO_INFO="";
+function toast(m){var t=document.getElementById("toast");if(!t){t=document.createElement("div");t.id="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(function(){t.style.display="none"},4200)}
+function b64u(x){x=x.replace(/-/g,"+").replace(/_/g,"/");while(x.length%4)x+="=";var b=atob(x),a=new Uint8Array(b.length),i;for(i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function devId(){
+  var k="";try{k=localStorage.getItem("np-dev")||""}catch(e){}
+  if(!k){var A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",a=new Uint8Array(8),i;
+    if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(i=0;i<8;i++)a[i]=Math.floor(Math.random()*256);
+    for(i=0;i<8;i++)k+=A[a[i]%A.length];k=k.slice(0,4)+"-"+k.slice(4);
+    try{localStorage.setItem("np-dev",k)}catch(e){}}
+  return k;
+}
+async function proCheck(code){
+  code=(code||"").replace(/\s+/g,"");var p=code.split(".");
+  if(p.length!==3||p[0]!=="NP1")return{ok:false,why:"That code is not valid."};
+  if(!(window.crypto&&crypto.subtle))return{ok:false,why:"This browser cannot check codes here. Open the app from its https link."};
+  try{
+    var key=await crypto.subtle.importKey("jwk",PUBK,{name:"ECDSA",namedCurve:"P-256"},false,["verify"]);
+    var ok=await crypto.subtle.verify({name:"ECDSA",hash:"SHA-256"},key,b64u(p[2]),new TextEncoder().encode("NP1."+p[1]));
+    if(!ok)return{ok:false,why:"That code is not valid."};
+    var d=JSON.parse(new TextDecoder().decode(b64u(p[1])));
+    if(d.x&&d.x<today())return{ok:false,why:"This code expired on "+d.x+"."};
+    var me=devId().replace(/[^A-Z0-9]/g,"");
+    if(!d.d||!d.d.length||d.d.map(function(z){return String(z).replace(/[^A-Za-z0-9]/g,"").toUpperCase()}).indexOf(me)<0)return{ok:false,why:"This code is locked to a different device. Send your Device ID ("+devId()+") to the seller to get a code for this device."};
+    return{ok:true,d:d};
+  }catch(e){return{ok:false,why:"That code is not valid."}}
+}
+async function proInit(){
+  var c="";try{c=localStorage.getItem("np-pro")||""}catch(e){}
+  if(!c)return;var r=await proCheck(c);
+  if(r.ok){PRO=true;PROI=r.d;render()}
+}
+async function proActivate(){
+  var el=document.getElementById("procode"),m=document.getElementById("promsg"),c=el?el.value:"";
+  if(!c.trim()){if(m)m.textContent="Paste your Pro code first.";return}
+  var r=await proCheck(c);
+  if(!r.ok){if(m)m.textContent=r.why;return}
+  try{localStorage.setItem("np-pro",c.replace(/\s+/g,""))}catch(e){}
+  PRO=true;PROI=r.d;render();toast("NetPlay Pro unlocked. Thank you!");
+}
+function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
+function proHtml(){
+  if(PRO)return'<div class="lockbox" id="prosec"><b>NetPlay Pro is active</b><p class="hint" style="margin:0">'+esc(PROI&&PROI.n?"Licensed to "+PROI.n+". ":"")+(PROI&&PROI.x?"Valid until "+esc(PROI.x)+".":"Lifetime license.")+'</p><p class="hint" style="margin:8px 0 0"><b>'+(PROI&&PROI.d&&PROI.d.length>1?"This license is for up to "+PROI.d.length+" devices only.":"This license is for one device only.")+'</b></p><p class="hint" style="margin:8px 0 0">Your Device ID: <b id="devid">'+esc(devId())+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpdev">Copy</button></p></div>';
+  return'<div class="lockbox" id="prosec"><b>NetPlay Pro</b><p class="hint" style="margin:0 0 8px">Free: up to '+FREE_COURTS+' courts and the Mixed (XD), Women\u2019s (WD) and Men\u2019s (MD) Doubles categories. Pro unlocks more courts, the level-specific categories (Intermediate &amp; Advance, Advanced Only), the Games played ranking, Split total, the Payments module with payment buttons, overview and transaction history, and PDF exports. '+esc(PRO_INFO)+'</p><div class="pick2" style="margin:0 0 10px"><a class="btn" style="text-align:center;text-decoration:none" href="'+buyLink("1 year, 1 device","40 AED")+'">1 year<br>40 AED<br><small>1 device only</small></a><a class="btn" style="text-align:center;text-decoration:none" href="'+buyLink("Lifetime, 1 device","80 AED")+'">Lifetime<br>80 AED<br><small>1 device only</small></a></div><p class="hint" style="margin:0 0 10px">Tap a button to email the seller. Your Device ID is added for you. You will get payment details by email, and after payment your Pro code.</p><p class="hint" style="margin:0 0 10px">Prices are in UAE dirhams (AED). If you pay from another country, your bank converts the amount. Ask by email if you would like a price in another currency.</p><p class="hint" style="margin:0 0 10px">No email app opens? Send your Device ID, the plan you want and the words "Buy Pro" to <b>'+PRO_MAIL+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpmail">Copy email</button></p><textarea class="procode" id="procode" placeholder="Paste your Pro code here" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea><button class="btn" style="margin-top:8px" data-act="proact">Unlock Pro</button><p class="hint" id="promsg" style="margin:6px 0 0"></p><p class="hint" style="margin:8px 0 0">Your Device ID: <b id="devid">'+esc(devId())+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpdev">Copy</button></p><p class="hint" style="margin:6px 0 0">Your code works on this device only.</p></div>';
+}
+function needPro(what){toast(what+" is a Pro feature. Open Menu to enter your Pro code.");return false}
+var FREE_F=[["Up to "+FREE_COURTS+" courts","Choose your own court numbers, for example 1, 3, 5."],["Mixed Doubles (XD), Women\u2019s Doubles (WD) and Men\u2019s Doubles (MD)","Each court has its own category. Mixed needs one woman and one man on each team."],["Add players with a gender icon and skill level","Beginner/Novice, Intermediate, Advance or Open."],["Numbered waiting list","Sort A to Z, fewest games, level or queue order. Each row shows GP, level, wins and losses."],["Rest, back and remove buttons","Remove a player, or clear the whole waiting list with a two-tap safety check."],["Auto fill and manual picking for every court","Players who have not played yet go first, and the rotation stays fair."],["Rotation rules","Rotate partners every game, or let winners stay for 2 or 3 games."],["Court timer, scores and winning margin","Start a game, enter the winning score and see the margin and minutes played."],["Leaderboard","Top winners with a muscle icon for each win and a crying icon for each loss."],["Costs with a fixed amount per player","Set your currency symbol and see what each player pays."],["Game date, start and end time and pin location link","Show the time when the session is over, then End game and Reopen games."],["Export game data (CSV)"],["Undo your last action"],["Works offline and saves on your device","Designed for phone, tablet and laptop, with a dark mode."]];
+var PRO_F=[["Everything in the Free version"],["Up to 12 courts"],["Level-specific categories","Men\u2019s, Women\u2019s and Mixed (XD) Doubles: Intermediate & Advance, and Advanced Only."],["Games played ranking","Every player\u2019s games, wins and losses with muscle and crying icons."],["Export the ranking to PDF","A numbered list with each player\u2019s win and lose icons."],["Split total cost","Enter court rent and shuttlecock and divide the total between all players."],["Payments module","Payment overview, PAID, UNPAID, PARTIAL and EXEMPTED buttons for each player, and recording of cash, bank transfer and online payments."],["Transaction history","Every payment is logged, kept after Reopen games, and ready to export."],["Payment reports in Excel and PDF"],["Optional PIN lock for payments"],["\u201cNetPlay Queue Pro\u201d title","Shown once your Pro code is active."]];
+function listHtml(a){return"<ol>"+a.map(function(x){return"<li>"+esc(x[0])+(x[1]?"<small>"+esc(x[1])+"</small>":"")+"</li>"}).join("")+"</ol>"}
+function openPage(k){
+  var el=document.getElementById("fpage");if(!el)return;
+  var h='<div class="in"><div class="top"><button class="ghost" data-act="pageback">&larr; Back</button></div>';
+  if(k==="free")h+='<h2>Free version</h2><p class="sub">Everything below is included for free.</p>'+listHtml(FREE_F)+'<div class="lockbox" style="margin-top:16px"><b>Want more?</b><p class="hint" style="margin:0 0 8px">See everything NetPlay Pro adds.</p><button class="btn" data-act="pagepro">Pro version features</button></div>';
+  else{h+='<h2>NetPlay Queue Pro</h2><p class="sub">Everything in Free, plus:</p>'+listHtml(PRO_F.slice(1).length?PRO_F:PRO_F);
+    h+=PRO?'<div class="lockbox" style="margin-top:16px"><b>NetPlay Pro is active on this device.</b><p class="hint" style="margin:0">This license is for one device only.</p></div>':'<div class="prices"><a class="btn" href="'+buyLink("1 year, 1 device","40 AED")+'">1 year<br>40 AED<br><small>1 device only</small></a><a class="btn" href="'+buyLink("Lifetime, 1 device","80 AED")+'">Lifetime<br>80 AED<br><small>1 device only</small></a></div><p class="hint">Prices are in UAE dirhams (AED). Tap a price to email the seller. After payment you will receive a Pro code to paste in Menu.</p>';
+    h+='<button class="ghost" style="margin-top:6px" data-act="pagefree">Free version features</button>'}
+  el.innerHTML=h+"</div>";el.hidden=false;el.scrollTop=0;document.body.style.overflow="hidden";
+  if(!openPage.h){try{history.pushState({np:1},"")}catch(e){}openPage.h=1}
+}
+function closePage(fromPop){var el=document.getElementById("fpage");if(el)el.hidden=true;document.body.style.overflow="";if(openPage.h){openPage.h=0;if(!fromPop){try{history.back()}catch(e){}}}}
+window.addEventListener("popstate",function(){if(openPage.h)closePage(true)});
 async function saveFile(name,data,mid){
   function say(t){var e=document.getElementById(mid||"pxmsg");if(e)e.textContent=t}
   try{
@@ -476,8 +558,9 @@ function today(){var d=new Date(),p=function(n){return(n<10?"0":"")+n};return d.
 function tt(v){return v?new Date("1970-01-01T"+v).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):"not set"}
 function dateTxt(){return S.gd?new Date(S.gd+"T00:00").toLocaleDateString([],{weekday:"short",year:"numeric",month:"short",day:"numeric"}):"Set the game date"}
 function money(n){return S.cf.sym+n.toFixed(2)}
-function total(){return S.cf.fixed?(+S.cf.fx||0)*S.pl.length:(+S.cf.ch||0)+(+S.cf.sh||0)}
-function owe(p){return S.cf.fixed?(+S.cf.fx||0):(S.pl.length?total()/S.pl.length:0)}
+function fixedMode(){return PRO?!!S.cf.fixed:true}
+function total(){return fixedMode()?(+S.cf.fx||0)*S.pl.length:(+S.cf.ch||0)+(+S.cf.sh||0)}
+function owe(p){return fixedMode()?(+S.cf.fx||0):(S.pl.length?total()/S.pl.length:0)}
 function mins(ms){var m=Math.round(ms/60000);return m<1?"less than 1 min":m+" min"}
 function clk(t){return new Date(t).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}
 function fmt(ms){var s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60);s%=60;return(h?h+":"+(m<10?"0":"")+m:m)+":"+(s<10?"0":"")+s}
@@ -571,7 +654,7 @@ function courtHtml(c,ci){
     +[0,1].map(function(i){return'<div class="side"><div class="names">'+c.run.t[i].map(function(id){return pn(P(id))}).join("<br>")+'</div><div class="streak">'+(i===0&&c.run.s?"Win streak: "+c.run.s+" of "+S.max:"Team "+"AB".charAt(i))+'</div><input class="score" type="number" inputmode="numeric" min="0" max="99" placeholder="Score" aria-label="Team '+"AB".charAt(i)+' score" data-f="sc" data-c="'+ci+'" data-s="'+i+'" value="'+((c.run.sc||[])[i]||"")+'"><button class="win" data-act="win" data-c="'+ci+'" data-v="'+i+'">💪 Team '+"AB".charAt(i)+' won</button></div>'}).join("")+'</div><p class="streak" id="mg'+ci+'" style="margin:10px 0 0">'+marg(c.run.sc)+'</p>'+(c.msg?'<p class="warn">'+esc(c.msg)+'</p>':'')+'</section>';
     return h;
   }
-  h='<section class="court"><div class="chead"><b>Court '+lab(ci)+'</b></div><div class="chead"><select data-f="ccat" data-c="'+ci+'" aria-label="Category">'+SHOW.map(function(k){return CATS.filter(function(x){return x[0]===k})[0]}).map(function(x){return'<option value="'+x[0]+'"'+(x[0]===c.cat?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select></div>';
+  h='<section class="court"><div class="chead"><b>Court '+lab(ci)+'</b></div><div class="chead"><select data-f="ccat" data-c="'+ci+'" aria-label="Category">'+SHOW.map(function(k){return CATS.filter(function(x){return x[0]===k})[0]}).map(function(x){return'<option value="'+x[0]+'"'+(x[0]===c.cat?" selected":"")+'>'+x[1]+(!PRO&&PROCATS.indexOf(x[0])>=0?" (Pro)":"")+'</option>'}).join("")+'</select></div>';
   if(c.last)h+='<div class="over">Game over: played '+mins(c.last.ms)+'<small>'+(c.last.w!=null?'💪 Team '+"AB".charAt(c.last.w)+' won, 😭 Team '+"AB".charAt(1-c.last.w)+' lost<br>':'')+(c.last.sc?'Score '+c.last.sc+', won by '+c.last.mg+(c.last.mg===1?' point':' points'):'')+'</small></div>';
   if(c.keep.length)h+='<p class="streak">Winners stay (win '+c.s+' of '+S.max+')</p>';
   h+='<div class="pick"><div class="tl">Team A</div>'+selHtml(c,ci,0)+selHtml(c,ci,1)+'<div class="vs">versus</div><div class="tl">Team B</div>'+selHtml(c,ci,2)+selHtml(c,ci,3)+'</div>';
@@ -579,6 +662,7 @@ function courtHtml(c,ci){
   return h+'<div class="pick2"><button class="wbtn" data-act="fill" data-c="'+ci+'">'+ic("wand")+'Auto fill</button><button class="win" data-act="go" data-c="'+ci+'">'+ic("play")+'Start game</button></div>'+((c.last||c.keep.length||c.sel.some(Boolean)||c.msg)?'<button class="wbtn" style="width:100%;margin-top:8px" data-act="creset" data-c="'+ci+'">Reset court</button>':'')+'</section>';
 }
 function render(){
+  var tt0=PRO?"NetPlay Queue Pro":"NetPlay Queue",h10=document.getElementById("apptitle");if(h10)h10.textContent=tt0;document.title=tt0;
   ens();if(window.applyLayout)applyLayout();var h="";
   var run=S.courts.filter(function(c){return c.run}).length,dis=run||S.ended?" disabled":"",pin=/^https?:\/\//i.test(S.loc||"");
   h+='<div class="topbar"><span>Total courts: <b>'+S.nc+'</b> ('+esc(labels().join(", "))+')</span>'+(S.ended?'<span class="pill">Game ended</span>':'')+'</div>';
@@ -589,7 +673,7 @@ function render(){
     +(pin?'<p class="hint"><a href="'+esc(S.loc)+'" target="_blank" rel="noopener">Open pin location</a></p>':'')
     
     +'<div class="hint" style="margin:12px 0 4px">Layout</div><div class="seg" role="group" aria-label="Layout"><button data-act="lay" data-v="auto" aria-pressed="'+((S.lay||"auto")==="auto")+'">Auto</button><button data-act="lay" data-v="port" aria-pressed="'+(S.lay==="port")+'">Portrait</button><button data-act="lay" data-v="land" aria-pressed="'+(S.lay==="land")+'">Landscape</button></div>'
-    +'<button class="ghost" style="margin-top:6px" data-act="export">'+ic("down")+'Export game data (CSV)</button><p class="hint" id="xmsg" style="margin:6px 0 0"></p>'+endHtml()+'</details>';
+    +'<button class="ghost" style="margin-top:6px" data-act="export">'+ic("down")+'Export game data (CSV)</button><p class="hint" id="xmsg" style="margin:6px 0 0"></p>'+proHtml()+endHtml()+'</details>';
   h+='<div class="cols"><div class="colL">'+S.courts.map(courtHtml).join("")+'</div><div class="colR">';
   h+='<div class="row"><label class="hint" style="margin:0;flex:1">Court numbers, for example 1, 3, 5<input data-f="cn" maxlength="40" value="'+esc(S.cn)+'">'+(S.cnmsg?'<span style="color:var(--danger)">'+esc(S.cnmsg)+'</span>':'')+'</label><button class="ghost" style="margin-left:auto" data-act="undo"'+(UNDO.length?"":" disabled")+'>Undo</button></div>';
   h+='<div class="row"><div class="seg" role="group" aria-label="After a game">'
@@ -601,18 +685,18 @@ function render(){
     :"Winners stay on that court for up to "+S.max+" games in a row and are pre-selected. Losers go to the back. Pick or auto-fill the challengers.")+'</p>';
   h+='<label class="hint" for="lvl">Auto fill uses this level</label><select id="lvl" data-f="lvl"><option value="all"'+(S.lvl==="all"?" selected":"")+'>All levels</option>'+opts(LV,S.lvl)+'</select>';
   var cf=S.cf;
-  h+='<h2>'+ic("coins")+'Costs</h2><div class="add"><div class="seg full" role="group" aria-label="Cost mode"><button data-act="fx" data-v="0" aria-pressed="'+(!cf.fixed)+'">Split total</button><button data-act="fx" data-v="1" aria-pressed="'+(!!cf.fixed)+'">Fixed amount</button></div>'
-    +'<label class="hint" style="margin:0">Shuttlecock total<input'+(cf.fixed?" disabled":"")+' type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="sh" value="'+esc(cf.sh)+'"></label>'
-    +'<label class="hint" style="margin:0">Court rent total<input'+(cf.fixed?" disabled":"")+' type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="ch" value="'+esc(cf.ch)+'"></label>'
-    +'<label class="hint" style="margin:0">Currency symbol<input data-f="cf" data-k="sym" maxlength="3" value="'+esc(cf.sym)+'"></label><label class="hint full" style="margin:0">Fixed amount per player<input'+(cf.fixed?"":" disabled")+' type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="fx" value="'+esc(cf.fx||"")+'"></label>'
+  h+='<h2>'+ic("coins")+'Costs</h2><div class="add"><div class="seg full" role="group" aria-label="Cost mode"><button data-act="fx" data-v="0" aria-pressed="'+(!fixedMode())+'">Split total'+(PRO?"":" (Pro)")+'</button><button data-act="fx" data-v="1" aria-pressed="'+(!!fixedMode())+'">Fixed amount</button></div>'
+    +'<label class="hint" style="margin:0">Shuttlecock total<input'+(fixedMode()?" disabled":"")+' type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="sh" value="'+esc(cf.sh)+'"></label>'
+    +'<label class="hint" style="margin:0">Court rent total<input'+(fixedMode()?" disabled":"")+' type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="ch" value="'+esc(cf.ch)+'"></label>'
+    +'<label class="hint" style="margin:0">Currency symbol<input data-f="cf" data-k="sym" maxlength="3" value="'+esc(cf.sym)+'"></label><label class="hint full" style="margin:0">Fixed amount per player<input'+(fixedMode()?"":" disabled")+' type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="fx" value="'+esc(cf.fx||"")+'"></label>'
     +'</div>'
-    +'<div class="over" style="margin-top:10px">Total '+money(total())+'<small>'+(S.pl.length?(cf.fixed?'Fixed '+money(+cf.fx||0)+' x ':'Divided by ')+S.pl.length+' players'+(cf.fixed?'':' = '+money(total()/S.pl.length)+' each'):'Add players to calculate the total.')+'</small></div>';
+    +'<div class="over" style="margin-top:10px">Total '+money(total())+'<small>'+(S.pl.length?(fixedMode()?'Fixed '+money(+cf.fx||0)+' x ':'Divided by ')+S.pl.length+' players'+(fixedMode()?'':' = '+money(total()/S.pl.length)+' each'):'Add players to calculate the total.')+'</small></div>';
   h+=payHtml();
   var q=S.q.map(P);
   h+='<h2>'+ic("users")+'Waiting ('+q.length+')</h2><div class="seg fl" role="group" aria-label="Arrange waiting list">'+[["az","A to Z"],["gp","Fewest games"],["lv","Level"],["queue","Queue order"]].map(function(x){return'<button data-act="ws" data-v="'+x[0]+'" aria-pressed="'+((S.ws||"az")===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>';
-  h+=q.length?'<ul class="q wlist">'+waitSorted(q).map(function(p){var i=q.indexOf(p),st=pst(p),ed=canEdit(),
-      chip=ed?'<button class="chip st-'+st+'" data-act="pgoq" data-v="'+p.id+'" aria-label="Record payment for '+esc(p.n)+'">'+SLBL[st]+'</button>':'<span class="chip st-'+st+'">'+SLBL[st]+'</span>';
-    return'<li class="wi'+(p.rest?" rest":"")+'"><div class="l1">'+((S.ws||"az")==="queue"?'<span class="pos">#'+(i+1)+'</span>':'')+av(p)+esc(p.n)+'</div>'
+  h+=q.length?'<ul class="q wlist">'+waitSorted(q).map(function(p,ix){var i=q.indexOf(p),st=pst(p),ed=canEdit(),
+      chip=!PRO?'':ed?'<button class="chip st-'+st+'" data-act="pgoq" data-v="'+p.id+'" aria-label="Record payment for '+esc(p.n)+'">'+SLBL[st]+'</button>':'<span class="chip st-'+st+'">'+SLBL[st]+'</span>';
+    return'<li class="wi'+(p.rest?" rest":"")+'"><div class="l1"><span class="pos">'+(ix+1)+'.</span>'+av(p)+esc(p.n)+'</div>'
       +'<div class="l2">GP '+(p.p||0)+' &middot; '+LV[p.l]+'</div>'
       +'<div class="l3">\ud83d\udcaa '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div>'
       +'<div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp"><button class="sm" data-act="rest" data-v="'+p.id+'">'+(p.rest?"Back":"Rest")+'</button><button class="x" aria-label="Remove player" data-act="del" data-v="'+p.id+'"'+(ARM.k==="del"+p.id?' style="font-size:14px;font-weight:800"':'')+'>'+(ARM.k==="del"+p.id?"Remove?":"\u00d7")+'</button></span></div></li>'}).join("")+'</ul>'
@@ -625,7 +709,8 @@ function render(){
   var rk=S.pl.slice().sort(function(a,b){return b.w-a.w||a.x-b.x});
   if(rk.some(function(p){return p.p}))h+='<h2>'+ic("trophy")+'Leaderboard</h2><ol class="board">'+rk.map(function(p,i){var l=i===0&&p.w>0;
     return'<li class="'+(l?"lead":"")+'"><span class="nm">'+(l?"Leading: ":"")+pn(p)+'<div class="em">'+emo(p)+'</div><small>pays '+money(owe(p))+'</small></span><span class="wl"><b>'+p.w+'</b> W &nbsp;<b>'+p.x+'</b> L</span></li>'}).join("")+'</ol>';
-  if(S.pl.some(function(p){return p.p}))h+='<h2>'+ic("chart")+'Games played ranking</h2><ol class="board">'+S.pl.slice().sort(function(a,b){return b.p-a.p||a.n.localeCompare(b.n)}).map(function(p){return'<li><span class="nm">'+av(p)+esc(p.n)+'<span class="lv">'+SH[p.l]+'</span><div class="em">'+emo(p)+'</div></span><span class="wl"><b>'+p.p+'</b> GP</span></li>'}).join("")+'</ol><button class="ghost" style="margin-top:10px" data-act="rkpdf">'+ic("down")+'Export ranking (PDF)</button><p class="hint" id="rkmsg" style="margin:6px 0 0"></p>';
+  if(!PRO&&S.pl.some(function(p){return p.p}))h+='<div class="lockbox"><b>'+ic("chart")+'Games played ranking (Pro)</b><p class="hint" style="margin:0 0 8px">See every player\u2019s games, wins and losses, and export them to PDF, with NetPlay Pro.</p><button class="ghost" data-act="gopro">Unlock with a Pro code</button></div>';
+  else if(S.pl.some(function(p){return p.p}))h+='<h2>'+ic("chart")+'Games played ranking</h2><ol class="board">'+S.pl.slice().sort(function(a,b){return b.p-a.p||a.n.localeCompare(b.n)}).map(function(p){return'<li><span class="nm">'+av(p)+esc(p.n)+'<span class="lv">'+SH[p.l]+'</span><div class="em">'+emo(p)+'</div></span><span class="wl"><b>'+p.p+'</b> GP</span></li>'}).join("")+'</ol><button class="ghost" style="margin-top:10px" data-act="rkpdf">'+ic("down")+'Export ranking (PDF)</button><p class="hint" id="rkmsg" style="margin:6px 0 0"></p>';
   var gm=S.g.filter(function(g){return g.ms});
   if(gm.length){var tm=gm.reduce(function(a,g){return a+g.ms},0),pc={};
     gm.forEach(function(g){pc[g.c]=pc[g.c]||[0,0];pc[g.c][0]++;pc[g.c][1]+=g.ms});
@@ -641,7 +726,8 @@ document.addEventListener("click",function(e){
   else if(act==="undo"){if(UNDO.length)S=JSON.parse(UNDO.pop())}
   else if(act==="nc"){
     snap();
-    if(v==="1"&&S.nc<8)S.nc++;
+    if(v==="1"&&S.nc>=FREE_COURTS&&!PRO){UNDO.pop();needPro("More than "+FREE_COURTS+" courts");return}
+    else if(v==="1"&&S.nc<8)S.nc++;
     else if(v==="-1"&&S.nc>1){var lc=S.courts[S.nc-1];
       if(lc.run||lc.keep.length){UNDO.pop();lc.msg="Finish the game on this court before removing it."}
       else{S.q=S.q;S.courts.pop();S.nc--}}
@@ -662,17 +748,25 @@ document.addEventListener("click",function(e){
   else if(act==="prv"){if(!canEdit())return;S.rv=S.rv===v?null:v}
   else if(act==="prvx"){S.rv=null}
   else if(act==="prvc"){if(!canEdit())return;revTx(v)}
-  else if(act==="rkpdf"){exportRankPdf();return}
-  else if(act==="pxl"){if(canEdit())exportXlsx();return}
-  else if(act==="ppdf"){if(canEdit())exportPdf();return}
+  else if(act==="rkpdf"){if(!PRO){needPro("Exporting the ranking");return}exportRankPdf();return}
+  else if(act==="pxl"){if(!PRO){needPro("Excel export");return}if(canEdit())exportXlsx();return}
+  else if(act==="ppdf"){if(!PRO){needPro("PDF export");return}if(canEdit())exportPdf();return}
   else if(act==="lay"){S.lay=v;if(window.applyLayout)applyLayout()}
-  else if(act==="fx"){snap();S.cf.fixed=v==="1"}
+  else if(act==="fx"){if(!PRO&&v!=="1"){needPro("Split total");return}snap();S.cf.fixed=v==="1"}
   else if(act==="end"){if(S.courts.some(function(cc){return cc.run}))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg=""}}
   else if(act==="reopen"){if(!armed("reopen",t,"Tap again to clear everything and start blank"))return;snap();
     S.led=S.led||[];S.led.forEach(function(x){x.arc=1});S.ha=(S.ha||[]).concat(S.h||[]);S.h=[];S.ga=(S.ga||[]).concat(S.g||[]);S.g=[];S.auda=(S.auda||[]).concat(S.aud||[]);S.aud=[];
     S.ended=false;S.endmsg="";S.pl=[];S.q=[];S.pay={};S.pp=null;S.ptok=null;S.rv=null;S.pf="all";S.ps="";S.pmsg="";S.gd=today();S.ts="";S.te="";
     S.courts.forEach(function(cc){cc.run=null;cc.keep=[];cc.s=0;cc.sel=["","","",""];cc.last=null;cc.msg=""})}
   else if(act==="export"){exportData();return}
+  else if(act==="pagefree"){openPage("free");return}
+  else if(act==="pagepro"){openPage("pro");return}
+  else if(act==="pageback"){closePage();return}
+  else if(act==="proact"){proActivate();return}
+  else if(act==="cpmail"){try{navigator.clipboard.writeText(PRO_MAIL).then(function(){toast("Email copied: "+PRO_MAIL)},function(){toast("Email: "+PRO_MAIL)})}catch(er){toast("Email: "+PRO_MAIL)}return}
+  else if(act==="cpdev"){var dv=devId();try{navigator.clipboard.writeText(dv).then(function(){toast("Device ID copied: "+dv)},function(){toast("Your Device ID: "+dv)})}catch(er){toast("Your Device ID: "+dv)}return}
+  else if(act==="prooff"){try{localStorage.removeItem("np-pro")}catch(er){}PRO=false;PROI=null}
+  else if(act==="gopro"){S.mo=true;save();render();var ps=document.getElementById("prosec");if(ps)ps.scrollIntoView({block:"center"});return}
   else if(act==="creset"){snap();S.q=S.q.concat(c.keep);c.keep=[];c.s=0;c.sel=["","","",""];c.last=null;c.msg=""}
   else if(act==="fill"){fill(c)}
   else if(act==="go"){snap();go(c)}
@@ -685,6 +779,7 @@ document.addEventListener("click",function(e){
     if(S.courts.some(function(cc){return cc.run}))return;
     var n=document.getElementById("nm").value.trim();
     if(!n){try{document.getElementById("nm").focus({preventScroll:true})}catch(er){}return}
+    if(!PRO&&S.pl.length>=FREE_PLAYERS){needPro("More than "+FREE_PLAYERS+" players");return}
     snap();var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
     S.pl.push({id:id,n:n,g:S.ng,l:+S.nl,w:0,x:0,p:0,last:null,rest:false});S.q.push(id);
   }
@@ -699,11 +794,12 @@ document.addEventListener("change",function(e){
   var d=e.target.dataset,f=d&&d.f;if(!f||f==="sc")return;
   var nm=document.getElementById("nm"),keep=nm?nm.value:"";
   if(f==="cn"){var nv=e.target.value.split(",").map(function(x){return x.trim()}).filter(Boolean).filter(function(x,i,a){return a.indexOf(x)===i}).slice(0,12);S.cnmsg="";
+    if(!PRO&&nv.length>FREE_COURTS){nv=nv.slice(0,FREE_COURTS);S.cnmsg="Free version: up to "+FREE_COURTS+" courts. Unlock Pro for more.";toast("More than "+FREE_COURTS+" courts is a Pro feature. Open Menu to enter your Pro code.")}
     if(!nv.length)S.cnmsg="Enter at least one court number.";
     else if(S.courts.slice(nv.length).some(function(c){return c.run||c.keep.length}))S.cnmsg="Finish the games on the extra courts first.";
-    else{S.cn=nv.join(", ");S.courts=S.courts.slice(0,nv.length)}}
+    else{var lm=S.cnmsg;S.cn=nv.join(", ");S.courts=S.courts.slice(0,nv.length);S.cnmsg=lm}}
   else if(f==="cf"){S.cf[d.k]=e.target.value}else if(f==="sel"){var c=S.courts[+d.c];c.sel[+d.s]=e.target.value;c.msg=""}
-  else if(f==="ccat"){S.courts[+d.c].cat=e.target.value}
+  else if(f==="ccat"){var nc2=e.target.value;if(!PRO&&PROCATS.indexOf(nc2)>=0&&nc2!==S.courts[+d.c].cat){toast("That category is a Pro feature. Open Menu to enter your Pro code.")}else S.courts[+d.c].cat=nc2}
   else S[f]=e.target.value;
   save();render();
   var n2=document.getElementById("nm");if(n2)n2.value=keep;
@@ -718,7 +814,7 @@ document.addEventListener("input",function(e){var i=e.target.id;
   else if(i==="pa"||i==="pdue")balPreview()});
 document.addEventListener("toggle",function(e){var i=e.target.id;if(i==="menu"||i==="paymenu"){S[i==="menu"?"mo":"po"]=e.target.open;save()}},true);
 setInterval(function(){var ck=document.getElementById("clock");if(ck)ck.textContent=nowTxt();document.querySelectorAll("[data-t0]").forEach(function(el){el.textContent=fmt(Date.now()-(+el.dataset.t0))})},1000);
-render();
+render();proInit();
 </script>
 </body>
 </html>
