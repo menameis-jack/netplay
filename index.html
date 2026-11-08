@@ -230,12 +230,12 @@ details.more summary{cursor:pointer;font-weight:700}
 })();
 var LV=["Beginner/Novice","Intermediate","Advance","Open"],SH=["B","I","A","O"];
 var LSET={mxa:[2],mxi:[1],mxu:[1,2],mxl:[0,1],mxb:[0],mna:[2],wda:[2],mnu:[1,2],wdu:[1,2],opl:[0,1,2,3]};
-var BASE={mxa:"md",mxi:"md",mxu:"md",mxl:"md",mxb:"md",mna:"mn",wda:"wd",mnu:"mn",wdu:"wd",opl:"op"};
+var BASE={mxa:"md",mxi:"md",mxu:"md",mxl:"md",mxb:"md",mna:"mn",wda:"wd",mnu:"mn",wdu:"wd",opl:"op",cu:"op"};
 function bs(c){return BASE[c]||c}
 var CATS=[["md","Mixed Doubles (XD)","Needs one woman and one man on each team, any level."],["mxa","Mixed Doubles – Advanced Only","Needs one woman and one man on each team, all Advance level."],["mxi","Mixed Doubles – Intermediate","Needs one woman and one man on each team, all Intermediate level."],["mxu","Mixed Doubles – Upper (Intermediate & Advanced)","Needs one woman and one man on each team, Intermediate or Advance level."],["mxl","Mixed Doubles – Lower (Beginner & Intermediate)","Needs one woman and one man on each team, Beginner/Novice or Intermediate level."],["mxb","Mixed Doubles – Beginner & Low-Intermediate","Needs one woman and one man on each team, all Beginner/Novice level."],["mn","Men’s Doubles (MD)","Needs four men, any level."],["mna","Men’s Doubles – Advanced Only","Needs four men, all Advance level."],["wd","Women’s Doubles (WD)","Needs four women, any level."],["wda","Women’s Doubles – Advanced Only","Needs four women, all Advance level."],["op","Open / Any","Needs any four players."]];
-CATS.push(["mnu","Men’s Doubles (MD) - Intermediate & Advance","Needs four men, Intermediate or Advance level."],["wdu","Women’s Doubles (WD) - Intermediate & Advance","Needs four women, Intermediate or Advance level."],["opl","Mixed Doubles (MD/WD/XD) - All levels","Needs any four players, any level."]);
+CATS.push(["cu","Custom (pick any players)","Pick any four players by name. No gender or level rules."],["mnu","Men’s Doubles (MD) - Intermediate & Advance","Needs four men, Intermediate or Advance level."],["wdu","Women’s Doubles (WD) - Intermediate & Advance","Needs four women, Intermediate or Advance level."],["opl","Mixed Doubles (MD/WD/XD) - All levels","Needs any four players, any level."]);
 CATS.forEach(function(c){if(c[0]==="mxu")c[1]="Mixed Doubles (XD) - Intermediate & Advance";if(c[0]==="mxa")c[1]="Mixed Doubles (XD) - Advanced Only";if(c[0]==="mna")c[1]="Men’s Doubles (MD) - Advanced Only";if(c[0]==="wda")c[1]="Women’s Doubles (WD) - Advanced Only"});
-var SHOW=["md","wd","mn","wdu","mnu","mxu","wda","mna","mxa"],MIG={op:"md",opl:"md",mxi:"mxu",mxl:"md",mxb:"md"};
+var SHOW=["md","wd","mn","cu","wdu","mnu","mxu","wda","mna","mxa"],MIG={op:"md",opl:"md",mxi:"mxu",mxl:"md",mxb:"md"};
 var SL=["Team A: choose player 1","Team A: choose player 2","Team B: choose player 1","Team B: choose player 2"];
 var S=null,UNDO=[];
 try{S=JSON.parse(localStorage.getItem("shuttle-q3"))}catch(e){}
@@ -246,7 +246,7 @@ if(!S||!S.courts){
 }
 function labels(){var L=String(S.cn||"").split(",").map(function(x){return x.trim()}).filter(Boolean).filter(function(x,i,a){return a.indexOf(x)===i}).slice(0,12);return L.length?L:["1"]}
 function lab(i){return labels()[i]||String(i+1)}
-function ens(){if(!S.pc)S.pc={};if(!S.oc)S.oc={};if(!S.lv3){S.pl.forEach(function(p){p.l=p.l<=1?p.l:(p.l===2?1:2)});if(S.lvl!=="all")S.lvl=String(+S.lvl<=1?+S.lvl:(+S.lvl===2?1:2));S.nl=1;S.lv3=1}
+function ens(){nxl();if(!S.pc)S.pc={};if(!S.oc)S.oc={};if(!S.lv3){S.pl.forEach(function(p){p.l=p.l<=1?p.l:(p.l===2?1:2)});if(S.lvl!=="all")S.lvl=String(+S.lvl<=1?+S.lvl:(+S.lvl===2?1:2));S.nl=1;S.lv3=1}
   if(!S.cn){S.cn=[];for(var i=1;i<=(S.nc||2);i++)S.cn.push(i);S.cn=S.cn.join(", ")}S.nc=labels().length;S.courts.forEach(function(c){if(SHOW.indexOf(c.cat)<0)c.cat=MIG[c.cat]||"md"});if(!S.gd)S.gd=today();if(S.lim==null)S.lim="";if(!S.g)S.g=[];if(!S.cf)S.cf={sym:"₱",sh:"",ch:"",mode:"game"};while(S.courts.length<S.nc)S.courts.push({cat:"md",sel:["","","",""],run:null,keep:[],s:0,last:null,msg:""})}
 function save(){try{localStorage.setItem("shuttle-q3",JSON.stringify(S))}catch(e){}}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
@@ -260,7 +260,7 @@ function cdText(end){var rem=end-Date.now();if(rem<=0)return"Time is up. Over by
 function cdHtml(c,ci){var r=c.run;return'<div class="cdrow">'+(r.end?'<div class="cd" data-end="'+r.end+'" data-c="'+ci+'">'+cdText(r.end)+'</div><button class="sm cdb" data-act="ext" data-c="'+ci+'">+5 min</button>':'<button class="sm cdb" data-act="ext" data-c="'+ci+'">Start 20 min countdown</button>')+'</div>'}
 function beep(){try{if(navigator.vibrate)navigator.vibrate([300,150,300,150,300]);var A=window.AudioContext||window.webkitAudioContext,x=new A(),o=x.createOscillator(),g=x.createGain();o.connect(g);g.connect(x.destination);o.frequency.value=880;g.gain.value=.2;o.start();o.stop(x.currentTime+.8)}catch(e){}}
 var IC={menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',play:'<path d="M7 4l13 8-13 8z"/>',wand:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',plus:'<path d="M12 5v14M5 12h14"/>',down:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-6 6.5-6s6.5 2.5 6.5 6M17 5a3.5 3.5 0 010 7M21.5 20c0-2.5-1.5-4.5-4-5.3"/>',trophy:'<path d="M8 4h8v5a4 4 0 01-8 0zM8 6H4v1a4 4 0 004 4M16 6h4v1a4 4 0 01-4 4M12 13v4M8 20h8"/>',coins:'<circle cx="12" cy="12" r="8"/><path d="M12 7v10M9 9.5h4.5a1.8 1.8 0 010 3.6H9.5"/>',chart:'<path d="M5 20V10M12 20V4M19 20v-7"/>',clock:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'};
-function emo(p){function r(n,e){return n?(n<=8?new Array(n+1).join(e):e+"×"+n):""}return r(p.w,"💪")+(p.w&&p.x?" ":"")+r(p.x,"😭")}
+function emo(p){function r(n,e){return n?(n<=8?new Array(n+1).join(e):e+"×"+n):""}return r(p.w,"🏆")+(p.w&&p.x?" ":"")+r(p.x,"😭")}
 var ARM={};
 function armed(k,btn,lab){
   if(ARM.k===k&&Date.now()<ARM.t){ARM={};return true}
@@ -420,7 +420,7 @@ function payHtml(){
   h+='<input id="psrch" type="search" placeholder="Search player name" autocomplete="off" aria-label="Search player name" value="'+esc(S.ps||"")+'" style="margin-bottom:8px"><ul class="q pl" id="paylist">'+payList()+'</ul>';
   h+='<h2 style="margin:16px 0 8px">'+ic("list")+'Transaction history</h2>'+histHtml()+audHtml();
   h+=repHtml();
-  h+=ed?'<div class="pick2" style="margin-top:10px"><button class="ghost" data-act="pxl">'+ic("down")+'Export Excel</button><button class="ghost" data-act="ppdf">'+ic("down")+'Export PDF</button></div>':'<p class="hint">Unlock with the PIN to edit or export payments.</p>';
+  h+=ed?'<div class="pick2" style="margin-top:10px"><button class="ghost" data-act="pxl">'+ic("down")+'Export Excel</button><button class="ghost" data-act="ppdfp">'+ic("down")+'PDF - Player copy</button><button class="ghost" data-act="ppdfq">'+ic("down")+'PDF - QM copy</button></div>':'<p class="hint">Unlock with the PIN to edit or export payments.</p>';
   return h+'<p class="hint" id="pxmsg" style="margin:6px 0 0"></p></details>';
 }
 function repData(){
@@ -441,14 +441,9 @@ function repData(){
   return{HD:HD,rows:rows,TH:TH,tr:tr,sum:sum,flt:flt,t:t,bym:bym};
 }
 function emoImg(ch){try{var c=document.createElement("canvas");c.width=c.height=72;var x=c.getContext("2d");x.font="54px 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(ch,36,40);return c.toDataURL("image/png")}catch(e){return null}}
-function exportRankPdf(){
-  var e=document.getElementById("rkmsg");
-  if(!(window.jspdf&&window.jspdf.jsPDF)){if(e)e.textContent="PDF tools did not load. Check your connection.";return}
-  var rows=S.pl.slice().sort(function(a,b){return b.p-a.p||a.n.localeCompare(b.n)}),W=emoImg("\ud83d\udcaa"),L=emoImg("\ud83d\ude2d"),now=Date.now(),IS=11,GAP=3,
-    doc=new window.jspdf.jsPDF({unit:"pt",format:"a4"});
-  doc.setFontSize(16);doc.text("NetPlay Queue - Games Played Ranking",40,44);doc.setFontSize(9);
-  doc.text("Game date: "+S.gd+"   Generated: "+dtStr(now)+" "+tmStr(now)+"   Players: "+rows.length,40,62);
-  doc.autoTable({startY:76,head:[["No.","Name","GP","Wins","Losses"]],
+function rankTable(doc,y0,skip){
+  var rows=S.pl.filter(function(p){return !skip||!skip[p.id]}).sort(function(a,b){return b.p-a.p||a.n.localeCompare(b.n)}),W=emoImg("\ud83c\udfc6"),L=emoImg("\ud83d\ude2d"),IS=11,GAP=3;
+  doc.autoTable({startY:y0,head:[["No.","Name","GP","Wins","Losses"]],
     body:rows.map(function(p,i){return[i+1,p.n,p.p||0,p.w?"":"0",p.x?"":"0"]}),
     styles:{fontSize:10,cellPadding:{top:6,bottom:6,left:5,right:5},minCellHeight:24},
     columnStyles:{0:{cellWidth:34},2:{cellWidth:36},3:{cellWidth:150},4:{cellWidth:150}},
@@ -458,9 +453,7 @@ function exportRankPdf(){
       var k=n>8?1:n,x=d.cell.x+5,y=d.cell.y+(d.cell.height-IS)/2,i;
       for(i=0;i<k;i++)doc.addImage(img,"PNG",x+i*(IS+GAP),y,IS,IS);
       if(n>8){doc.setFontSize(10);doc.setTextColor(0);doc.text("x"+n,x+IS+GAP+3,y+IS-1)}
-    }});
-  saveFile("netplay-games-played-ranking-"+(S.gd||"game")+".pdf",doc.output("blob"),"rkmsg");
-}
+    }})}
 var PRO=false,LIC=false,BULKTXT="",PROI=null,PUBK={"key_ops":["verify"],"ext":true,"kty":"EC","x":"qF0pY-JGSvmp0yJ80quA4KAnCxejelwjw8eSQUG9NLo","y":"0HZSW3DoPFnJHGRQIR-7NR9huUeAzKkyuemIgerGOlo","crv":"P-256"},FREE_COURTS=5,FREE_PLAYERS=99999,PROCATS=["mnu","wdu","mxu","mna","wda","mxa"],PRO_MAIL="netplayqueue@gmail.com",PRO_INFO="";
 function toast(m){var t=document.getElementById("toast");if(!t){t=document.createElement("div");t.id="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(function(){t.style.display="none"},4200)}
 function b64u(x){x=x.replace(/-/g,"+").replace(/_/g,"/");while(x.length%4)x+="=";var b=atob(x),a=new Uint8Array(b.length),i;for(i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
@@ -512,14 +505,14 @@ async function proActivate(){
   try{localStorage.setItem("np-pro",c.replace(/\s+/g,""))}catch(e){}
   LIC=true;PROI=r.d;setPro();render();toast("NetPlay Pro unlocked. Thank you!");
 }
-function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
+function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 function proHtml(){
-  if(LIC)return'<div class="lockbox" id="prosec"><b>NetPlay Pro is active</b><p class="hint" style="margin:0">'+esc(PROI&&PROI.n?"Licensed to "+PROI.n+". ":"")+(PROI&&PROI.x?"Valid until "+esc(PROI.x)+".":"Lifetime license.")+'</p><p class="hint" style="margin:8px 0 0"><b>'+(PROI&&PROI.d&&PROI.d.length>1?"This license is for up to "+PROI.d.length+" devices only.":"This license is for one device only.")+'</b></p><p class="hint" style="margin:8px 0 0">Your Device ID: <b id="devid">'+esc(devId())+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpdev">Copy</button></p></div>';
-  return'<div class="lockbox" id="prosec"><b>NetPlay Pro</b>'+trialBox()+'<p class="hint" style="margin:0 0 8px">Free: up to '+FREE_COURTS+' courts and the Mixed (XD), Women\u2019s (WD) and Men\u2019s (MD) Doubles categories. Pro unlocks more courts, the level-specific categories (Intermediate &amp; Advance, Advanced Only), the Games played ranking, Split total, the Payments module with payment buttons, overview and transaction history, and PDF exports. '+esc(PRO_INFO)+'</p><div class="pick2" style="margin:0 0 10px"><a class="btn" style="text-align:center;text-decoration:none" href="'+buyLink("1 year, 1 device","40 AED")+'">1 year<br>40 AED<br><small>1 device only</small></a><a class="btn" style="text-align:center;text-decoration:none" href="'+buyLink("Lifetime, 1 device","80 AED")+'">Lifetime<br>80 AED<br><small>1 device only</small></a></div><p class="hint" style="margin:0 0 10px">Tap a button to email the seller. Your Device ID is added for you. You will get payment details by email, and after payment your Pro code.</p><p class="hint" style="margin:0 0 10px">Prices are in UAE dirhams (AED). If you pay from another country, your bank converts the amount. Ask by email if you would like a price in another currency.</p><p class="hint" style="margin:0 0 10px">No email app opens? Send your Device ID, the plan you want and the words "Buy Pro" to <b>'+PRO_MAIL+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpmail">Copy email</button></p><textarea class="procode" id="procode" placeholder="Paste your Pro code here" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea><button class="btn" style="margin-top:8px" data-act="proact">Unlock Pro</button><p class="hint" id="promsg" style="margin:6px 0 0"></p><p class="hint" style="margin:8px 0 0">Your Device ID: <b id="devid">'+esc(devId())+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpdev">Copy</button></p><p class="hint" style="margin:6px 0 0">Your code works on this device only.</p></div>';
+  if(LIC)return'<div class="lockbox" id="prosec"><b>NetPlay Pro is active</b><p class="hint" style="margin:0">'+esc(PROI&&PROI.n?"Licensed to "+PROI.n+". ":"")+(PROI&&PROI.x?"Valid until "+esc(PROI.x)+".":"Lifetime license.")+'</p><p class="hint" style="margin:8px 0 0"><b>'+(PROI&&PROI.d&&PROI.d.length>1?"This license is for up to "+PROI.d.length+" devices only.":"This license is for up to 2 devices.")+'</b></p><p class="hint" style="margin:8px 0 0">Your Device ID: <b id="devid">'+esc(devId())+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpdev">Copy</button></p></div>';
+  return'<div class="lockbox" id="prosec"><b>NetPlay Pro</b>'+trialBox()+'<p class="hint" style="margin:0 0 8px">Free: up to '+FREE_COURTS+' courts and the Mixed (XD), Women\u2019s (WD) and Men\u2019s (MD) Doubles categories. Pro unlocks more courts, the level-specific categories (Intermediate &amp; Advance, Advanced Only), the Games played ranking, Split total, the Payments module with payment buttons, overview and transaction history, and PDF exports. '+esc(PRO_INFO)+'</p><div class="pick2" style="margin:0 0 10px"><a class="btn" style="text-align:center;text-decoration:none" href="'+buyLink("1 year, 2 devices","50 AED")+'">1 year<br>50 AED<br><small>Good for 2 devices</small></a><a class="btn" style="text-align:center;text-decoration:none" href="'+buyLink("Lifetime, 2 devices","80 AED")+'">Lifetime<br>80 AED<br><small>Good for 2 devices</small></a></div><p class="hint" style="margin:0 0 10px">Tap a button to email the seller. Your Device ID is added for you. You will get payment details by email, and after payment your Pro code.</p><p class="hint" style="margin:0 0 10px">Prices are in UAE dirhams (AED). If you pay from another country, your bank converts the amount. Ask by email if you would like a price in another currency.</p><p class="hint" style="margin:0 0 10px">No email app opens? Send your Device ID, the plan you want and the words "Buy Pro" to <b>'+PRO_MAIL+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpmail">Copy email</button></p><textarea class="procode" id="procode" placeholder="Paste your Pro code here" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea><button class="btn" style="margin-top:8px" data-act="proact">Unlock Pro</button><p class="hint" id="promsg" style="margin:6px 0 0"></p><p class="hint" style="margin:8px 0 0">Your Device ID: <b id="devid">'+esc(devId())+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpdev">Copy</button></p><p class="hint" style="margin:6px 0 0">Your code works on this device only.</p></div>';
 }
 function needPro(what){toast(what+" is a Pro feature. Open Menu to enter your Pro code.");return false}
-var FREE_F=[["Up to "+FREE_COURTS+" courts","Choose your own court numbers, for example 1, 3, 5."],["Mixed Doubles (XD), Women\u2019s Doubles (WD) and Men\u2019s Doubles (MD)","Each court has its own category. Mixed needs one woman and one man on each team."],["Add players with a gender icon and skill level","Beginner/Novice, Intermediate, Advance or Open."],["Numbered waiting list","Sort A to Z, fewest games, level or queue order. Each row shows GP, level, wins and losses."],["Rest, back and remove buttons","Remove a player, or clear the whole waiting list with a two-tap safety check."],["Auto fill and manual picking for every court","Players who have not played yet go first, and the rotation stays fair."],["Rotation rules","Rotate partners every game, or let winners stay for 2 or 3 games."],["Court timer, scores and winning margin","Start a game, enter the winning score and see the margin and minutes played."],["Leaderboard","Top winners with a muscle icon for each win and a crying icon for each loss."],["Costs with a fixed amount per player","Set your currency symbol and see what each player pays."],["Game date, start and end time and pin location link","Show the time when the session is over, then End game and Reopen games."],["Add several players at once","Type or paste one name per line."],["\u201cLeaving after this game\u201d button","Tap a player on a court and they rest automatically when the game ends."],["Share session summary","Copy a ready message with the date, games, top winners and what each player pays."],["Rematch button","Replay the same four players on the same court in one tap."],["Game history","See every finished game with its score, margin and time."],["Language","English, Arabic, Filipino and Hindi."],["Bigger text option","Normal, large or extra large."],["Quick tour and Install on home screen"],["Export game data (CSV)"],["Undo your last action"],["Works offline and saves on your device","Designed for phone, tablet and laptop, with a dark mode."]];
-var PRO_F=[["Everything in the Free version"],["Free trial for 2 uses","Try everything below for 2 uses. Games on the same day count as 1 use, and the next different date counts as use 2. Once per device."],["Up to 12 courts"],["My regular players list","Save your regulars once and add them all in one tap."],["Sound and vibration when the session end time is reached","Set the end time in Menu."],["Smart auto fill","Avoids repeat partners and opponents and balances teams by skill."],["Play next button","Move a waiting player to the front of the queue."],["Payment reminder messages","One tap writes a message for every player who has not paid."],["Player receipts","Copy a receipt for any player."],["Monthly report","Games, money collected, expenses and balance for each month."],["Season statistics","Games, wins and losses for every player across all sessions."],["Level-specific categories","Men\u2019s, Women\u2019s and Mixed (XD) Doubles: Intermediate & Advance, and Advanced Only."],["Games played ranking","Every player\u2019s games, wins and losses with muscle and crying icons."],["Export the ranking to PDF","A numbered list with each player\u2019s win and lose icons."],["Split total cost","Enter court rent and shuttlecock and divide the total between all players."],["Payments module","Payment overview, PAID, UNPAID, PARTIAL and EXEMPTED buttons for each player, and recording of cash, bank transfer and online payments."],["Transaction history","Every payment is logged, kept after Reopen games, and ready to export."],["Payment reports in Excel and PDF"],["Optional PIN lock for payments"],["\u201cNetPlay Queue Pro\u201d title","Shown once your Pro code is active."]];
+var FREE_F=[["Up to "+FREE_COURTS+" courts","Choose your own court numbers, for example 1, 3, 5."],["Mixed Doubles (XD), Women\u2019s Doubles (WD) and Men\u2019s Doubles (MD)","Each court has its own category. Mixed needs one woman and one man on each team."],["Add several players at once","Paste a list with a gender and level after each name, for example Jack M A or Maria F Int. Preview it, fix any row with a tap, then add all."],["Next-up team","Line up one team to play next, then move it onto any court that opens."],["Custom category","Pick any four names yourself with no gender or level rules. Auto fill takes the first four in the queue."],["Add players with a gender icon and skill level","Beginner/Novice, Intermediate, Advance or Open."],["Numbered waiting list","Sort A to Z, fewest games, level or queue order. Each row shows GP, level, wins and losses."],["Rest, back and remove buttons","Remove a player, or clear the whole waiting list with a two-tap safety check."],["Auto fill and manual picking for every court","Players who have not played yet go first, and the rotation stays fair."],["Rotation rules","Rotate partners every game, or let winners stay for 2 or 3 games."],["Court timer, scores and winning margin","Start a game, enter the winning score and see the margin and minutes played."],["Leaderboard","Top winners with a muscle icon for each win and a crying icon for each loss."],["Costs with a fixed amount per player","Set your currency symbol and see what each player pays."],["Game date, start and end time and pin location link","Show the time when the session is over, then End game and Reopen games."],["Add several players at once","Type or paste one name per line."],["\u201cLeaving after this game\u201d button","Tap a player on a court and they rest automatically when the game ends."],["Share session summary","Copy a ready message with the date, games, top winners and what each player pays."],["Rematch button","Replay the same four players on the same court in one tap."],["Game history","See every finished game with its score, margin and time."],["Language","English, Arabic, Filipino and Hindi."],["Bigger text option","Normal, large or extra large."],["Quick tour and Install on home screen"],["Export game data (CSV)"],["Undo your last action"],["Works offline and saves on your device","Designed for phone, tablet and laptop, with a dark mode."]];
+var PRO_F=[["Everything in the Free version"],["Free trial for 2 uses","Try everything below for 2 uses. Games on the same day count as 1 use, and the next different date counts as use 2. Once per device."],["Up to 12 courts"],["Several next-up teams","Line up to 4 teams to play next."],["Two payment PDFs","Player copy hides the totals. Queue Master (QM) copy shows everything, with each court category and player level."],["My regular players list","Save your regulars once and add them all in one tap."],["Sound and vibration when the session end time is reached","Set the end time in Menu."],["Smart auto fill","Avoids repeat partners and opponents and balances teams by skill."],["Play next button","Move a waiting player to the front of the queue."],["Payment reminder messages","One tap writes a message for every player who has not paid."],["Player receipts","Copy a receipt for any player."],["Monthly report","Games, money collected, expenses and balance for each month."],["Season statistics","Games, wins and losses for every player across all sessions."],["Level-specific categories","Men\u2019s, Women\u2019s and Mixed (XD) Doubles: Intermediate & Advance, and Advanced Only."],["Games played ranking","Every player\u2019s games, wins and losses with muscle and crying icons."],["Export the ranking to PDF","A numbered list with each player\u2019s win and lose icons."],["Split total cost","Enter court rent and shuttlecock and divide the total between all players."],["Payments module","Payment overview, PAID, UNPAID, PARTIAL and EXEMPTED buttons for each player, and recording of cash, bank transfer and online payments."],["Transaction history","Every payment is logged, kept after Reopen games, and ready to export."],["Payment reports in Excel and PDF"],["Optional PIN lock for payments"],["\u201cNetPlay Queue Pro\u201d title","Shown once your Pro code is active."]];
 function listHtml(a){return"<ol>"+a.map(function(x){return"<li>"+esc(x[0])+(x[1]?"<small>"+esc(x[1])+"</small>":"")+"</li>"}).join("")+"</ol>"}
 function openPage(k){
   var el=document.getElementById("fpage");if(!el)return;
@@ -527,7 +520,7 @@ function openPage(k){
   if(k==="free")h+='<h2>Free version</h2><p class="sub">Everything below is included for free.</p>'+listHtml(FREE_F)+'<div class="lockbox" style="margin-top:16px"><b>Want more?</b><p class="hint" style="margin:0 0 8px">See everything NetPlay Pro adds.</p><button class="btn" data-act="pagepro">Pro version features</button></div>';
   else if(k==="monthly")h+=monthlyHtml();else if(k==="season")h+=seasonHtml();else if(k==="tour")h+=tourHtml();else if(k==="install")h+=installHtml();
   else{h+='<h2>NetPlay Queue Pro</h2><p class="sub">Everything in Free, plus:</p>'+listHtml(PRO_F.slice(1).length?PRO_F:PRO_F);
-    h+=LIC?'<div class="lockbox" style="margin-top:16px"><b>NetPlay Pro is active on this device.</b><p class="hint" style="margin:0">This license is for one device only.</p></div>':'<div style="margin-top:14px">'+trialBox()+'</div><div class="prices"><a class="btn" href="'+buyLink("1 year, 1 device","40 AED")+'">1 year<br>40 AED<br><small>1 device only</small></a><a class="btn" href="'+buyLink("Lifetime, 1 device","80 AED")+'">Lifetime<br>80 AED<br><small>1 device only</small></a></div><p class="hint">Prices are in UAE dirhams (AED). Tap a price to email the seller. After payment you will receive a Pro code to paste in Menu.</p>';
+    h+=LIC?'<div class="lockbox" style="margin-top:16px"><b>NetPlay Pro is active on this device.</b><p class="hint" style="margin:0">This license is for up to 2 devices.</p></div>':'<div style="margin-top:14px">'+trialBox()+'</div><div class="prices"><a class="btn" href="'+buyLink("1 year, 2 devices","50 AED")+'">1 year<br>50 AED<br><small>Good for 2 devices</small></a><a class="btn" href="'+buyLink("Lifetime, 2 devices","80 AED")+'">Lifetime<br>80 AED<br><small>Good for 2 devices</small></a></div><p class="hint">Prices are in UAE dirhams (AED). Tap a price to email the seller. After payment you will receive a Pro code to paste in Menu.</p>';
     h+='<button class="ghost" style="margin-top:6px" data-act="pagefree">Free version features</button>'}
   el.innerHTML=h+"</div>";applyLang();el.hidden=false;el.scrollTop=0;document.body.style.overflow="hidden";
   if(!openPage.h){try{history.pushState({np:1},"")}catch(e){}openPage.h=1}
@@ -552,7 +545,7 @@ function seasonRows(){var m={};sessGet().forEach(function(x){x.pl.forEach(functi
 function seasonText(){return seasonRows().map(function(o,i){return(i+1)+". "+o.n+" - "+o.p+" GP, "+o.w+" W, "+o.x+" L, "+(o.w+o.x?Math.round(o.w/(o.w+o.x)*100):0)+"% wins, "+o.s+" sessions"}).join("\n")}
 function seasonHtml(){var r=seasonRows(),h='<h2>Season statistics</h2><p class="sub">Every player across all the sessions you ended with End game.</p>';
   if(!r.length)return h+'<p class="hint">No sessions yet. Play a session and tap End game, and the statistics appear here.</p>';
-  return h+'<ol>'+r.map(function(o){var t=o.w+o.x;return'<li><b>'+esc(o.n)+'</b><small>'+o.p+' games played &middot; 💪 '+o.w+' wins &middot; 😭 '+o.x+' losses &middot; '+(t?Math.round(o.w/t*100):0)+'% wins &middot; '+o.s+' session'+(o.s===1?'':'s')+'</small></li>'}).join("")+'</ol><button class="ghost" style="margin-top:12px" data-act="cprep" data-v="s">Copy statistics</button>'}
+  return h+'<ol>'+r.map(function(o){var t=o.w+o.x;return'<li><b>'+esc(o.n)+'</b><small>'+o.p+' games played &middot; 🏆 '+o.w+' wins &middot; 😭 '+o.x+' losses &middot; '+(t?Math.round(o.w/t*100):0)+'% wins &middot; '+o.s+' session'+(o.s===1?'':'s')+'</small></li>'}).join("")+'</ol><button class="ghost" style="margin-top:12px" data-act="cprep" data-v="s">Copy statistics</button>'}
 function receiptText(p){var s0=pst(p),d=s0==="exempt"?0:dueOf(p),a=paidOf(p),b=s0==="exempt"?0:Math.max(0,d-a),tx=(S.led||[]).filter(function(t){return t.id===p.id&&!t.arc}),L=["NetPlay Queue - Receipt","Date: "+S.gd,"Player: "+p.n,"Games played: "+(p.p||0)+" ("+(p.w||0)+" wins, "+(p.x||0)+" losses)","Amount due: "+money(d),"Amount paid: "+money(a),"Balance: "+money(b),"Status: "+({paid:"Paid",unpaid:"Unpaid",partial:"Part paid",exempt:"Exempt"}[s0]||s0)];
   if(tx.length){L.push("","Payments:");tx.forEach(function(t){L.push("- "+txDate(t)+" "+txTime(t).slice(0,5)+", "+mOf(t)+", "+money(t.a))})}
   L.push("","Thank you!");return L.join("\n")}
@@ -568,7 +561,7 @@ function installHtml(){var ua=navigator.userAgent||"",ios=/iPhone|iPad|iPod/.tes
   else h+='<li><b>On Android (Chrome)</b><small>1. Tap the three dots at the top right. 2. Tap Install app or Add to Home screen. 3. Tap Install.</small></li><li><b>On iPhone or iPad (Safari)</b><small>Tap Share, then Add to Home Screen, then Add.</small></li>';
   return h+'</ol><p class="hint" style="margin-top:12px">Tip: always open NetPlay the same way. The Safari tab and the home-screen app keep separate saved data on iPhone.</p>'}
 var LD=[["Free version features","ميزات النسخة المجانية","Mga tampok ng Libreng bersyon","मुफ़्त संस्करण की सुविधाएँ"],["Pro version features","ميزات نسخة برو","Mga tampok ng Pro","प्रो संस्करण की सुविधाएँ"],["Court","ملعب","Court","कोर्ट"],["Started","بدأت","Nagsimula","शुरू"],["Leaving after this game:","سيغادر بعد هذه المباراة:","Aalis pagkatapos ng larong ito:","इस खेल के बाद जा रहे हैं:"],["Team A","الفريق أ","Koponan A","टीम A"],["Team B","الفريق ب","Koponan B","टीम B"],["Auto fill","تعبئة تلقائية","Auto fill","ऑटो फ़िल"],["Start game","ابدأ المباراة","Simulan ang laro","खेल शुरू करें"],["Reset court","إعادة ضبط الملعب","I-reset ang court","कोर्ट रीसेट करें"],["Game ended","انتهت المباراة","Tapos na ang laro","खेल समाप्त"],["Game date","تاريخ المباراة","Petsa ng laro","खेल की तारीख"],["Time to start","وقت البدء","Oras ng simula","शुरू होने का समय"],["Time to end","وقت الانتهاء","Oras ng pagtatapos","समाप्ति का समय"],["Pin location link","رابط موقع الملعب","Link ng lokasyon","लोकेशन पिन लिंक"],["Open pin location","افتح الموقع","Buksan ang lokasyon","लोकेशन खोलें"],["Layout","التخطيط","Layout","लेआउट"],["Auto","تلقائي","Awtomatiko","ऑटो"],["Portrait","عمودي","Patayo","पोर्ट्रेट"],["Landscape","أفقي","Pahiga","लैंडस्केप"],["Export game data (CSV)","تصدير بيانات المباراة (CSV)","I-export ang datos ng laro (CSV)","खेल का डेटा निर्यात करें (CSV)"],["Share session summary","مشاركة ملخص الجلسة","Ibahagi ang buod ng session","सत्र का सारांश साझा करें"],["Undo","تراجع","I-undo","पूर्ववत करें"],["Rotate all","تدوير الجميع","I-rotate lahat","सभी घुमाएँ"],["All levels","جميع المستويات","Lahat ng antas","सभी स्तर"],["Costs","التكاليف","Gastos","खर्च"],["Split total","تقسيم الإجمالي","Hatiin ang kabuuan","कुल बाँटें"],["Fixed amount","مبلغ ثابت","Takdang halaga","निश्चित राशि"],["Shuttlecock total","إجمالي الريشة","Kabuuang shuttlecock","शटलकॉक कुल"],["Court rent total","إجمالي إيجار الملعب","Kabuuang renta ng court","कोर्ट किराया कुल"],["Currency symbol","رمز العملة","Simbolo ng pera","मुद्रा चिह्न"],["Fixed amount per player","مبلغ ثابت لكل لاعب","Takdang halaga bawat manlalaro","प्रति खिलाड़ी निश्चित राशि"],["Add a player","أضف لاعبًا","Magdagdag ng manlalaro","खिलाड़ी जोड़ें"],["Add player","إضافة لاعب","Idagdag ang manlalaro","खिलाड़ी जोड़ें"],["Add several players at once","إضافة عدة لاعبين دفعة واحدة","Magdagdag ng maraming manlalaro nang sabay","एक साथ कई खिलाड़ी जोड़ें"],["Add all","إضافة الكل","Idagdag lahat","सभी जोड़ें"],["Woman","امرأة","Babae","महिला"],["Man","رجل","Lalaki","पुरुष"],["Nobody waiting. Add players below.","لا أحد في الانتظار. أضف لاعبين أدناه.","Walang naghihintay. Magdagdag ng manlalaro sa ibaba.","कोई प्रतीक्षा में नहीं। नीचे खिलाड़ी जोड़ें।"],["Leaderboard","لوحة المتصدرين","Leaderboard","लीडरबोर्ड"],["Games played ranking","ترتيب المباريات الملعوبة","Ranggo ayon sa laro","खेले गए खेलों की रैंकिंग"],["Recent games","المباريات الأخيرة","Mga huling laro","हाल के खेल"],["Game summary","ملخص المباراة","Buod ng laro","खेल सारांश"],["Rest","استراحة","Pahinga","आराम"],["Back","رجوع","Balik","वापस"],["Clear waiting list","مسح قائمة الانتظار","I-clear ang waiting list","प्रतीक्षा सूची साफ़ करें"],["End game","إنهاء اللعبة","Tapusin ang laro","खेल समाप्त करें"],["Reopen games","إعادة فتح المباريات","Buksan muli ang mga laro","खेल फिर से खोलें"],["Payment overview","نظرة عامة على المدفوعات","Pangkalahatang-tanaw ng bayad","भुगतान का अवलोकन"],["Record payment","تسجيل دفعة","I-record ang bayad","भुगतान दर्ज करें"],["Save payment","حفظ الدفعة","I-save ang bayad","भुगतान सहेजें"],["Cancel","إلغاء","Kanselahin","रद्द करें"],["Paid in full","مدفوع بالكامل","Bayad nang buo","पूरा भुगतान हुआ"],["Beginner/Novice","مبتدئ","Baguhan","शुरुआती"],["Intermediate","متوسط","Katamtaman","मध्यम"],["Advance","متقدم","Advance","उन्नत"],["Open","مفتوح","Open","ओपन"],["Play next","العب التالي","Susunod na maglaro","अगला खेलें"],["Next up","التالي","Susunod","अगला"],["Quick tour","جولة سريعة","Mabilis na tour","त्वरित परिचय"],["Install on home screen","التثبيت على الشاشة الرئيسية","I-install sa home screen","होम स्क्रीन पर इंस्टॉल करें"],["Text size","حجم النص","Laki ng teksto","टेक्स्ट का आकार"],["Language","اللغة","Wika","भाषा"],["Normal","عادي","Karaniwan","सामान्य"],["Large","كبير","Malaki","बड़ा"],["Extra large","كبير جدًا","Napakalaki","बहुत बड़ा"],["Player name","اسم اللاعب","Pangalan ng manlalaro","खिलाड़ी का नाम"],["Score","النتيجة","Iskor","स्कोर"],["versus","ضد","laban sa","बनाम"],["Got it","فهمت","Sige","समझ गया"],["Rematch: same four players","إعادة المباراة: نفس اللاعبين الأربعة","Rematch: parehong apat na manlalaro","रीमैच: वही चार खिलाड़ी"],["Monthly report (Pro)","التقرير الشهري (برو)","Buwanang ulat (Pro)","मासिक रिपोर्ट (प्रो)"],["Season stats (Pro)","إحصائيات الموسم (برو)","Istatistika ng season (Pro)","सीज़न आँकड़े (प्रो)"],["Copy payment reminders","نسخ تذكيرات الدفع","Kopyahin ang paalala sa bayad","भुगतान अनुस्मारक कॉपी करें"],["Copy receipt","نسخ الإيصال","Kopyahin ang resibo","रसीद कॉपी करें"],["Start free trial (2 uses)","ابدأ التجربة المجانية (استخدامان)","Simulan ang libreng trial (2 gamit)","मुफ़्त परीक्षण शुरू करें (2 उपयोग)"]];
-var LRX=[[/^Total courts: (.*)$/,["إجمالي الملاعب: ","Kabuuang court: ","कुल कोर्ट: "]],[/^Waiting \((\d+)\)$/,["قائمة الانتظار (","Naghihintay (","प्रतीक्षा ("],")"],[/^Menu: (.*)$/,["القائمة: ","Menu: ","मेन्यू: "]],[/^💪 Team ([AB]) won$/,["💪 فاز الفريق ","💪 Panalo ang Koponan ","💪 टीम जीती "]]];
+var LRX=[[/^Total courts: (.*)$/,["إجمالي الملاعب: ","Kabuuang court: ","कुल कोर्ट: "]],[/^Waiting \((\d+)\)$/,["قائمة الانتظار (","Naghihintay (","प्रतीक्षा ("],")"],[/^Menu: (.*)$/,["القائمة: ","Menu: ","मेन्यू: "]],[/^🏆 Team ([AB]) won$/,["🏆 فاز الفريق ","🏆 Panalo ang Koponan ","🏆 टीम जीती "]]];
 function applyLang(){var i=LANG==="ar"?1:LANG==="fil"?2:LANG==="hi"?3:0;document.documentElement.dir=LANG==="ar"?"rtl":"ltr";document.documentElement.lang=LANG==="en"?"en":LANG==="fil"?"fil":LANG;
   var map={};if(i)LD.forEach(function(r){map[r[0]]=r[i]});
   document.querySelectorAll(".fbtns button").forEach(function(b){if(!b.dataset.en)b.dataset.en=b.textContent.trim();b.textContent=map[b.dataset.en]||b.dataset.en});
@@ -586,8 +579,39 @@ function moreMenu(){
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="ghost" data-act="rptm">Monthly report'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="rpts">Season stats'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="pagetour">Quick tour</button><button class="ghost" data-act="pageinst">Install on home screen</button></div>'}
 function rosterGet(){try{return JSON.parse(localStorage.getItem("np-roster")||"[]")}catch(e){return[]}}
 function rosterSave(a){try{localStorage.setItem("np-roster",JSON.stringify(a))}catch(e){}}
+var BPREV=null;
+var GW={m:"M",male:"M",man:"M",boy:"M",guy:"M",f:"F",female:"F",woman:"F",girl:"F",lady:"F","\u2642":"M","\u2640":"F","\u{1F468}":"M","\u{1F469}":"F"},LW={b:0,beg:0,begin:0,beginner:0,novice:0,nov:0,n:0,i:1,int:1,inter:1,intermediate:1,a:2,adv:2,advance:2,advanced:2,o:3,open:3};
+function parseBulk(txt,dg,dl){
+  var t=String(txt||"").replace(/\r/g,""),parts;
+  if(t.indexOf("\n")<0&&t.indexOf(";")<0&&t.indexOf("(")<0)parts=t.split(",");else parts=t.split(/[\n;]+/);
+  var out=[];
+  parts.forEach(function(line){
+    line=line.replace(/^[\s\-\u2022*]*(\d+\s*[.):\-]\s*)?/,"").trim();if(!line)return;
+    var tk=line.split(/[\s,\-\u2013|\/()\[\]]+/).filter(Boolean),g=null,l=null;
+    while(tk.length>1){var w=tk[tk.length-1].toLowerCase();
+      if(g===null&&GW[w]){g=GW[w];tk.pop()}
+      else if(l===null&&LW[w]!==undefined){l=LW[w];tk.pop()}
+      else break}
+    var nm=tk.join(" ").slice(0,24);
+    if(nm)out.push({n:nm,g:g||dg,l:l===null?+dl:l,gs:g!==null,ls:l!==null})});
+  return out}
+function bprevHtml(){
+  if(!BPREV)return"";
+  var have={};S.pl.forEach(function(p){have[p.n.toLowerCase()]=1});
+  var seen={},n=0;
+  var rows=BPREV.map(function(x,i){var low=x.n.toLowerCase(),dup=have[low]||seen[low];if(!dup){seen[low]=1;n++}
+    return'<div class="brow" style="display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap"><span style="flex:1;min-width:90px'+(dup?";opacity:.5;text-decoration:line-through":"")+'">'+(i+1)+'. '+esc(x.n)+'</span>'+(dup?'<small>already in list</small>':'<button class="ghost" data-act="bg" data-v="'+i+'">'+(x.g==="F"?"\u2640 Female":"\u2642 Male")+'</button><button class="ghost" data-act="bl" data-v="'+i+'">'+LV[x.l]+'</button>')+'<button class="ghost" data-act="bx" data-v="'+i+'" aria-label="Remove row">\u2715</button></div>'}).join("");
+  return'<div class="bprev" id="bprev"><p class="hint" style="margin:8px 0 2px"><b>Check the list.</b> Tap a gender or level to change it.</p>'+rows+'<p class="hint" style="margin:6px 0 0">'+n+' will be added.</p></div>'}
 function newPl(n,g,l){return{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),n:n,g:g,l:+l,w:0,x:0,p:0,last:null,rest:false}}
-function copyText(txt,ok){try{navigator.clipboard.writeText(txt).then(function(){toast(ok)},function(){toast("Could not copy.")})}catch(e){toast("Could not copy.")}}
+function copyBox(txt){var o=document.getElementById("cpbox");if(o)o.remove();o=document.createElement("div");o.id="cpbox";o.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px";
+  var w=document.createElement("div");w.style.cssText="background:var(--card,#fff);color:var(--ink,#111);border-radius:14px;padding:14px;max-width:420px;width:100%;box-sizing:border-box";
+  var p=document.createElement("p");p.textContent="Your browser blocked automatic copy. Press and hold the text, choose Select all, then Copy.";p.style.cssText="margin:0 0 8px;font-size:14px";
+  var t=document.createElement("textarea");t.value=txt;t.readOnly=true;t.style.cssText="width:100%;height:200px;box-sizing:border-box;font:inherit;font-size:14px";
+  var bt=document.createElement("button");bt.className="btn full";bt.textContent="Close";bt.style.marginTop="8px";bt.onclick=function(){o.remove()};
+  w.appendChild(p);w.appendChild(t);w.appendChild(bt);o.appendChild(w);document.body.appendChild(o);t.focus();t.select()}
+function copyText(txt,ok){
+  function fb(){try{var t=document.createElement("textarea");t.value=txt;t.setAttribute("readonly","");t.style.cssText="position:fixed;top:0;left:0;opacity:0";document.body.appendChild(t);t.focus();t.select();t.setSelectionRange(0,txt.length);var r=document.execCommand("copy");t.remove();if(r){toast(ok);return}}catch(e){}copyBox(txt)}
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){toast(ok)},fb)}else fb()}catch(e){fb()}}
 function summaryText(){
   var lines=["NetPlay Queue - "+S.gd,"Games played: "+(S.g||[]).length,"Players: "+S.pl.length],rk=S.pl.slice().sort(function(a,b){return b.w-a.w||a.x-b.x});
   var top=rk.filter(function(p){return p.w>0}).slice(0,3);
@@ -616,20 +640,23 @@ function exportXlsx(){
   var buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
   saveFile("netplay-payments-"+(S.gd||"game")+".xlsx",new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
 }
-function exportPdf(){
-  var e=document.getElementById("pxmsg");
+function exportPdf(kind){
+  var qm=kind==="qm",e=document.getElementById("pxmsg");
   if(!(window.jspdf&&window.jspdf.jsPDF)){if(e)e.textContent="PDF tools did not load. Check your connection.";return}
-  var D=repData(),doc=new window.jspdf.jsPDF({unit:"pt",format:"a4",orientation:"landscape"}),n2=function(v){return typeof v==="number"?v.toFixed(2):v},now=Date.now();
-  doc.setFontSize(16);doc.text("NetPlay Queue - Payment Summary Report",40,40);doc.setFontSize(9);
+  var D=repData(),exm={},exn=[];if(!qm)S.pl.forEach(function(p){if(pst(p)==="exempt"){exm[p.id]=1;exn.push(p.n)}});if(!qm)D.rows=D.rows.filter(function(r){return !exm[r[0]]});var doc=new window.jspdf.jsPDF({unit:"pt",format:"a4",orientation:"landscape"}),n2=function(v){return typeof v==="number"?v.toFixed(2):v},now=Date.now();
+  doc.setFontSize(16);doc.text(qm?"NetPlay Queue - Payment Summary (Queue Master copy)":"NetPlay Queue - Payment Summary (Player copy)",40,40);doc.setFontSize(9);
   doc.text("Game date: "+S.gd+"   Generated: "+dtStr(now)+" "+tmStr(now)+"   Filters: date "+(S.rfd||"all")+", status "+(S.rfs||"all")+", method "+(S.rfm||"all"),40,58);
-  doc.autoTable({startY:70,head:[["Summary","Value"]],body:D.sum.map(function(r){return[r[0],typeof r[1]==="number"&&/Expected|Collected|Outstanding/.test(r[0])?r[1].toFixed(2):String(r[1])]}),styles:{fontSize:8},tableWidth:300});
+  doc.autoTable({startY:70,head:[["Summary","Value"]],body:D.sum.filter(function(r){return qm||!/^Total (Exempted|Expected Collection|Amount Collected)$/.test(r[0])}).map(function(r){return[r[0],typeof r[1]==="number"&&/Expected|Collected|Outstanding/.test(r[0])?r[1].toFixed(2):String(r[1])]}),styles:{fontSize:8},tableWidth:300});
   doc.autoTable({head:[["Payment method","Transactions","Net amount"]],body:D.bym.map(function(r){return r.map(n2)}),styles:{fontSize:8},tableWidth:300});
-  doc.autoTable({head:[D.HD.slice(1,13)],body:(function(){var no={},c=0;return D.rows.map(function(r){if(!no[r[0]])no[r[0]]=++c;var o=r.slice(1,13).map(n2);o[0]=no[r[0]]+". "+o[0];return o})})(),styles:{fontSize:6.5}});
+  if(qm){var cr=S.courts.map(function(c,i){var ct=CATS.filter(function(x){return x[0]===c.cat})[0];return["Court "+(i+1),ct?ct[1]:c.cat]});
+    if(cr.length)doc.autoTable({head:[["Court","Selection category"]],body:cr,styles:{fontSize:8},tableWidth:300})}
+  doc.autoTable({head:[qm?D.HD.slice(1,13).concat(["Level"]):D.HD.slice(1,13)],body:(function(){var no={},c=0;return D.rows.map(function(r){if(!no[r[0]])no[r[0]]=++c;var o=r.slice(1,13).map(n2);o[0]=no[r[0]]+". "+o[0];if(qm){var pp=P(r[0]);o.push(pp&&LV[pp.l]!=null?LV[pp.l]:"")}return o})})(),styles:{fontSize:6.5}});
   var rt=D.tr.filter(function(r){return !P(r[2])}),ky=function(r){return r.filter(function(x,i){return i!==0&&i!==2}).map(n2)};
   if(rt.length){doc.setFontSize(10);doc.text("Transactions of players no longer registered",40,doc.lastAutoTable.finalY+22);doc.autoTable({startY:doc.lastAutoTable.finalY+28,head:[D.TH.filter(function(x,i){return i!==0&&i!==2})],body:rt.map(ky),styles:{fontSize:6.5}})}
   var hl=(S.ha||[]).concat(S.h||[]).slice(-300).map(function(x,i){return[i+1,unesc(x).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").replace(/\s+/g," ").trim()]});
   if(hl.length){doc.setFontSize(10);doc.text("Recent games log",40,doc.lastAutoTable.finalY+22);doc.autoTable({startY:doc.lastAutoTable.finalY+28,head:[["No.","Game"]],body:hl,styles:{fontSize:7}})}
-  saveFile("netplay-payments-"+(S.gd||"game")+".pdf",doc.output("blob"));
+  if(!qm){doc.addPage();doc.setFontSize(16);doc.text("Games Played Ranking",40,44);doc.setFontSize(9);doc.text("Game date: "+S.gd+"   Players: "+S.pl.length,40,62);rankTable(doc,76)}
+  saveFile("netplay-payments-"+(qm?"QM":"player")+"-"+(S.gd||"game")+".pdf",doc.output("blob"));
 }
 function csv(rows){return rows.map(function(r){return r.map(function(c){c=String(c==null?"":c);if(/^[=+\-@]/.test(c))c="'"+c;return/[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(",")}).join("\n")}
 function unesc(s){return String(s).replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&amp;/g,"&")}
@@ -662,8 +689,12 @@ function owe(p){return fixedMode()?(+S.cf.fx||0):(S.pl.length?total()/S.pl.lengt
 function mins(ms){var m=Math.round(ms/60000);return m<1?"less than 1 min":m+" min"}
 function clk(t){return new Date(t).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}
 function fmt(ms){var s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60);s%=60;return(h?h+":"+(m<10?"0":"")+m:m)+":"+(s<10?"0":"")+s}
-function taken(skipC,skipK){var t=[];S.courts.forEach(function(c){c.sel.forEach(function(x,j){if(x&&!(c===skipC&&j===skipK))t.push(x)})});return t}
-function pool(c){var tk=[];S.courts.forEach(function(x){if(x!==c)x.sel.forEach(function(id){if(id)tk.push(id)})});return S.q.map(P).filter(function(p){return !p.rest&&tk.indexOf(p.id)<0&&(S.lvl==="all"||String(p.l)===S.lvl)})}
+var NX_MAX=4;
+function nxNew(){return{cat:"md",sel:["","","",""],run:null,keep:[],s:0,last:null,msg:""}}
+function nxl(){if(!S.nx||!S.nx.length)S.nx=[nxNew()];return PRO?S.nx.slice(0,NX_MAX):S.nx.slice(0,1)}
+function cget(i){i=+i;return i>=100?nxl()[i-100]:S.courts[i]}
+function taken(skipC,skipK){var t=[];S.courts.concat(nxl()).forEach(function(c){c.sel.forEach(function(x,j){if(x&&!(c===skipC&&j===skipK))t.push(x)})});return t}
+function pool(c){var tk=[];S.courts.concat(nxl()).forEach(function(x){if(x!==c)x.sel.forEach(function(id){if(id)tk.push(id)})});return S.q.map(P).filter(function(p){return !p.rest&&tk.indexOf(p.id)<0&&(S.lvl==="all"||String(p.l)===S.lvl)})}
 function pk(a,n,c0){var lv=LSET[c0];if(!lv||lv.length<2)return a.slice(0,n);
   var g=lv.map(function(k){return a.filter(function(p){return p.l===k})}),o=[],i=0;
   while(o.length<n&&g.some(function(x){return x.length>i})){g.forEach(function(x){if(x.length>i&&o.length<n)o.push(x[i])});i++}
@@ -719,7 +750,7 @@ function fill(c){
 function resetSession(){recordSession();
     S.led=S.led||[];S.led.forEach(function(x){x.arc=1});S.ha=(S.ha||[]).concat(S.h||[]);S.h=[];S.pc={};S.oc={};S.hall=false;S.ga=(S.ga||[]).concat(S.g||[]);S.g=[];S.auda=(S.auda||[]).concat(S.aud||[]);S.aud=[];
     S.ended=false;S.endmsg="";S.pl=[];S.q=[];S.pay={};S.pp=null;S.ptok=null;S.rv=null;S.pf="all";S.ps="";S.pmsg="";S.gd=today();S.ts="";S.te="";
-    S.courts.forEach(function(cc){cc.run=null;cc.keep=[];cc.s=0;cc.sel=["","","",""];cc.last=null;cc.msg=""})}
+    S.courts.forEach(function(cc){cc.run=null;cc.keep=[];cc.s=0;cc.sel=["","","",""];cc.last=null;cc.msg=""});S.nx=[nxNew()]}
 function autoDayReset(){
   if(!S.gd||S.gd>=today()||S.courts.some(function(c){return c.run}))return;
   if(!(S.pl.length||(S.h||[]).length||(S.led||[]).some(function(x){return !x.arc})||(S.g||[]).length))return;
@@ -750,7 +781,7 @@ function result(ci,i){
   W.forEach(function(id){var p=P(id);p.w++;p.p++;p.last=W[W[0]===id?1:0]});
   L.forEach(function(id){var p=P(id);p.x++;p.p++;p.last=L[L[0]===id?1:0]});
   var s=(i===0?r.s:0)+1;
-  S.h.push("💪 "+plain(W)+" beat 😭 "+plain(L)+(ws?" "+ws+", margin "+mg:"")+" ("+mins(ms)+" on court "+lab(ci)+")");
+  S.h.push("🏆 "+plain(W)+" beat 😭 "+plain(L)+(ws?" "+ws+", margin "+mg:"")+" ("+mins(ms)+" on court "+lab(ci)+")");
   S.g.push({ms:ms,c:lab(ci)});c.last={ms:ms,txt:"Won: "+plain(W),sc:ws,mg:mg,w:i,ids:r.t[0].concat(r.t[1])};c.msg="";
   var lvIds=W.concat(L).filter(function(id){return P(id)&&P(id).lv});lvIds.forEach(function(id){P(id).rest=true;P(id).lv=false});var wl=W.some(function(id){return lvIds.indexOf(id)>=0});
   S.q=S.q.concat(L);c.run=null;
@@ -758,7 +789,7 @@ function result(ci,i){
 }
 function comp(c){
   var s=c.sel.map(P);if(s.some(function(p){return !p}))return"";
-  if(c.cat==="op")return"";
+  if(c.cat==="op"||c.cat==="cu")return"";
   var b=bs(c.cat),ok;if(b==="wd")ok=s.every(function(p){return p.g==="F"});
   else if(b==="mn")ok=s.every(function(p){return p.g==="M"});
   else if(b==="op")ok=true;
@@ -778,17 +809,30 @@ function courtHtml(c,ci){
   var cn=CATS.filter(function(x){return x[0]===c.cat})[0][1],h;
   if(c.run){
     h='<section class="court m"><div class="chead"><b>Court '+lab(ci)+'</b><span class="streak">'+cn+'</span><span class="tm">Started '+clk(c.run.t0)+'</span></div><div class="sides">'
-    +[0,1].map(function(i){return'<div class="side"><div class="names">'+c.run.t[i].map(function(id){return pn(P(id))}).join("<br>")+'</div><div class="streak">'+(i===0&&c.run.s?"Win streak: "+c.run.s+" of "+S.max:"Team "+"AB".charAt(i))+'</div><input class="score" type="number" inputmode="numeric" min="0" max="99" placeholder="Score" aria-label="Team '+"AB".charAt(i)+' score" data-f="sc" data-c="'+ci+'" data-s="'+i+'" value="'+((c.run.sc||[])[i]||"")+'"><button class="win" data-act="win" data-c="'+ci+'" data-v="'+i+'">💪 Team '+"AB".charAt(i)+' won</button></div>'}).join("")+'</div><p class="streak" id="mg'+ci+'" style="margin:10px 0 0">'+marg(c.run.sc)+'</p><div class="lvrow"><span class="hint" style="margin:0">Leaving after this game:</span>'+c.run.t[0].concat(c.run.t[1]).map(function(id){var q=P(id);return q?'<button class="ghost" data-act="lv" data-v="'+id+'" aria-pressed="'+(!!q.lv)+'">'+esc(q.n)+'</button>':""}).join("")+'</div>'+(c.msg?'<p class="warn">'+esc(c.msg)+'</p>':'')+'</section>';
+    +[0,1].map(function(i){return'<div class="side"><div class="names">'+c.run.t[i].map(function(id){return pn(P(id))}).join("<br>")+'</div><div class="streak">'+(i===0&&c.run.s?"Win streak: "+c.run.s+" of "+S.max:"Team "+"AB".charAt(i))+'</div><input class="score" type="number" inputmode="numeric" min="0" max="99" placeholder="Score" aria-label="Team '+"AB".charAt(i)+' score" data-f="sc" data-c="'+ci+'" data-s="'+i+'" value="'+((c.run.sc||[])[i]||"")+'"><button class="win" data-act="win" data-c="'+ci+'" data-v="'+i+'">🏆 Team '+"AB".charAt(i)+' won</button></div>'}).join("")+'</div><p class="streak" id="mg'+ci+'" style="margin:10px 0 0">'+marg(c.run.sc)+'</p><div class="lvrow"><span class="hint" style="margin:0">Leaving after this game:</span>'+c.run.t[0].concat(c.run.t[1]).map(function(id){var q=P(id);return q?'<button class="ghost" data-act="lv" data-v="'+id+'" aria-pressed="'+(!!q.lv)+'">'+esc(q.n)+'</button>':""}).join("")+'</div>'+(c.msg?'<p class="warn">'+esc(c.msg)+'</p>':'')+'</section>';
     return h;
   }
   h='<section class="court"><div class="chead"><b>Court '+lab(ci)+'</b></div><div class="chead"><select data-f="ccat" data-c="'+ci+'" aria-label="Category">'+SHOW.map(function(k){return CATS.filter(function(x){return x[0]===k})[0]}).map(function(x){return'<option value="'+x[0]+'"'+(x[0]===c.cat?" selected":"")+'>'+x[1]+(!PRO&&PROCATS.indexOf(x[0])>=0?" (Pro)":"")+'</option>'}).join("")+'</select></div>';
-  if(c.last)h+='<div class="over">Game over: played '+mins(c.last.ms)+'<small>'+(c.last.w!=null?'💪 Team '+"AB".charAt(c.last.w)+' won, 😭 Team '+"AB".charAt(1-c.last.w)+' lost<br>':'')+(c.last.sc?'Score '+c.last.sc+', won by '+c.last.mg+(c.last.mg===1?' point':' points'):'')+'</small></div>';
+  if(c.last)h+='<div class="over">Game over: played '+mins(c.last.ms)+'<small>'+(c.last.w!=null?'🏆 Team '+"AB".charAt(c.last.w)+' won, 😭 Team '+"AB".charAt(1-c.last.w)+' lost<br>':'')+(c.last.sc?'Score '+c.last.sc+', won by '+c.last.mg+(c.last.mg===1?' point':' points'):'')+'</small></div>';
   if(c.last&&c.last.ids&&!c.keep.length&&!c.sel.some(Boolean)&&!S.ended&&c.last.ids.every(function(id){return P(id)&&S.q.indexOf(id)>=0&&!P(id).rest&&taken(c,-1).indexOf(id)<0}))h+='<button class="ghost" style="width:100%;margin:8px 0 0" data-act="rematch" data-c="'+ci+'">Rematch: same four players</button>';
   if(c.keep.length)h+='<p class="streak">Winners stay (win '+c.s+' of '+S.max+')</p>';
   h+='<div class="pick"><div class="tl">Team A</div>'+selHtml(c,ci,0)+selHtml(c,ci,1)+'<div class="vs">versus</div><div class="tl">Team B</div>'+selHtml(c,ci,2)+selHtml(c,ci,3)+'</div>';
   var w=comp(c)||c.msg;if(w)h+='<p class="warn">'+esc(w)+'</p>';
   return h+'<div class="pick2"><button class="wbtn" data-act="fill" data-c="'+ci+'">'+ic("wand")+'Auto fill</button><button class="win" data-act="go" data-c="'+ci+'">'+ic("play")+'Start game</button></div>'+((c.last||c.keep.length||c.sel.some(Boolean)||c.msg)?'<button class="wbtn" style="width:100%;margin-top:8px" data-act="creset" data-c="'+ci+'">Reset court</button>':'')+'</section>';
 }
+function nxBlock(){
+  if(S.ended)return"";var L=nxl(),idle=[];
+  S.courts.forEach(function(c,i){if(!c.run&&!c.sel.some(Boolean)&&!c.keep.length)idle.push(i)});
+  var h=L.map(function(n,ni){var ci=100+ni,full=n.sel.every(Boolean);
+    var x='<section class="court"><div class="chead"><b>Next up'+(L.length>1?" "+(ni+1):"")+'</b>'+(ni>0?'<button class="ghost" data-act="nxrm" data-c="'+ci+'">Remove</button>':'')+'</div><div class="chead"><select data-f="ccat" data-c="'+ci+'" aria-label="Category">'+SHOW.map(function(k){return CATS.filter(function(y){return y[0]===k})[0]}).map(function(y){return'<option value="'+y[0]+'"'+(y[0]===n.cat?" selected":"")+'>'+y[1]+(!PRO&&PROCATS.indexOf(y[0])>=0?" (Pro)":"")+'</option>'}).join("")+'</select></div>'
+    +'<div class="pick"><div class="tl">Team A</div>'+selHtml(n,ci,0)+selHtml(n,ci,1)+'<div class="vs">versus</div><div class="tl">Team B</div>'+selHtml(n,ci,2)+selHtml(n,ci,3)+'</div>';
+    var w=comp(n)||n.msg;if(w)x+='<p class="warn">'+esc(w)+'</p>';
+    x+='<div class="pick2"><button class="wbtn" data-act="fill" data-c="'+ci+'">'+ic("wand")+'Auto fill</button>'+(n.sel.some(Boolean)?'<button class="wbtn" data-act="nxclr" data-c="'+ci+'">Clear</button>':'')+'</div>';
+    if(full)x+=idle.length?'<div class="pick2">'+idle.map(function(i){return'<button class="win" data-act="nxmv" data-c="'+ci+'" data-v="'+i+'">Move to Court '+lab(i)+'</button>'}).join("")+'</div>':'<p class="hint" style="margin:8px 0 0">Waiting for a court to open. Save the score on a running court to free it.</p>';
+    return x+'</section>'}).join("");
+  if(PRO&&S.nx.length<NX_MAX)h+='<button class="ghost" style="width:100%;margin:8px 0" data-act="nxadd">+ Add another next-up team</button>';
+  else if(!PRO)h+='<button class="ghost" style="width:100%;margin:8px 0" data-act="nxadd">+ Add another next-up team (Pro)</button>';
+  return h}
 function render(){
   trialBar();
   var tt0=LIC?"NetPlay Queue Pro":"NetPlay Queue",h10=document.getElementById("apptitle");if(h10)h10.textContent=tt0;document.title=tt0;
@@ -803,7 +847,7 @@ function render(){
     
     +'<div class="hint" style="margin:12px 0 4px">Layout</div><div class="seg" role="group" aria-label="Layout"><button data-act="lay" data-v="auto" aria-pressed="'+((S.lay||"auto")==="auto")+'">Auto</button><button data-act="lay" data-v="port" aria-pressed="'+(S.lay==="port")+'">Portrait</button><button data-act="lay" data-v="land" aria-pressed="'+(S.lay==="land")+'">Landscape</button></div>'
     +'<button class="ghost" style="margin-top:6px" data-act="export">'+ic("down")+'Export game data (CSV)</button><button class="ghost" style="margin-top:6px" data-act="share">Share session summary</button>'+moreMenu()+'<p class="hint" id="xmsg" style="margin:6px 0 0"></p>'+proHtml()+endHtml()+'</details>';
-  h+='<div class="cols"><div class="colL">'+S.courts.map(courtHtml).join("")+'</div><div class="colR">';
+  h+='<div class="cols"><div class="colL">'+S.courts.map(courtHtml).join("")+nxBlock()+'</div><div class="colR">';
   h+='<div class="row"><label class="hint" style="margin:0;flex:1">Court numbers, for example 1, 3, 5<input data-f="cn" maxlength="40" value="'+esc(S.cn)+'">'+(S.cnmsg?'<span style="color:var(--danger)">'+esc(S.cnmsg)+'</span>':'')+'</label><button class="ghost" style="margin-left:auto" data-act="undo"'+(UNDO.length?"":" disabled")+'>Undo</button></div>';
   h+='<div class="row"><div class="seg" role="group" aria-label="After a game">'
     +'<button data-act="rule" data-v="rot" aria-pressed="'+(S.mode==="rot")+'">Rotate all</button>'
@@ -827,7 +871,7 @@ function render(){
       chip=!PRO?'':ed?'<button class="chip st-'+st+'" data-act="pgoq" data-v="'+p.id+'" aria-label="Record payment for '+esc(p.n)+'">'+SLBL[st]+'</button>':'<span class="chip st-'+st+'">'+SLBL[st]+'</span>';
     return'<li class="wi'+(p.rest?" rest":"")+'"><div class="l1"><span class="pos">'+(ix+1)+'.</span>'+av(p)+esc(p.n)+'</div>'
       +'<div class="l2">GP '+(p.p||0)+' &middot; '+LV[p.l]+(p.nx?' &middot; Next up':'')+'</div>'
-      +'<div class="l3">\ud83d\udcaa '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div>'
+      +'<div class="l3">\ud83c\udfc6 '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div>'
       +'<div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp">'+(PRO?'<button class="sm" data-act="nx" data-v="'+p.id+'" aria-pressed="'+(!!p.nx)+'">'+(p.nx?"Next up":"Play next")+'</button>':'')+'<button class="sm" data-act="rest" data-v="'+p.id+'">'+(p.rest?"Back":"Rest")+'</button><button class="x" aria-label="Remove player" data-act="del" data-v="'+p.id+'"'+(ARM.k==="del"+p.id?' style="font-size:14px;font-weight:800"':'')+'>'+(ARM.k==="del"+p.id?"Remove?":"\u00d7")+'</button></span></div></li>'}).join("")+'</ul>'
     :'<p class="hint">Nobody waiting. Add players below.</p>';
   h+=(q.length?'<button class="ghost" style="margin-top:10px;color:var(--danger)" data-act="clear">'+(ARM.k==="clear"?"Tap again to remove all "+q.length+" waiting players":"Clear waiting list")+'</button>':'');
@@ -835,13 +879,13 @@ function render(){
     +'<select data-f="ng"'+dis+' aria-label="Gender"><option value="F"'+(S.ng==="F"?" selected":"")+'>Woman</option><option value="M"'+(S.ng==="M"?" selected":"")+'>Man</option></select>'
     +'<select data-f="nl"'+dis+' aria-label="Level">'+opts(LV,S.nl)+'</select>'
     +'<button class="btn full" data-act="add"'+dis+'>'+ic("plus")+'Add player</button></div>'
-    +'<details class="more" id="morep"'+(S.bo?" open":"")+'><summary>Add several players at once</summary><textarea class="bulk" id="bulk"'+dis+' placeholder="One name per line" aria-label="Player names">'+esc(BULKTXT)+'</textarea><p class="hint" style="margin:4px 0 8px">Uses the gender and level chosen above.</p><button class="btn full" data-act="addmany"'+dis+'>'+ic("plus")+'Add all</button>'
+    +'<details class="more" id="morep"'+(S.bo?" open":"")+'><summary>Add several players at once</summary><textarea class="bulk" id="bulk"'+dis+' placeholder="One player per line, for example:&#10;Jack M A&#10;Maria F Int&#10;Ben - Beginner" aria-label="Player names">'+esc(BULKTXT)+'</textarea><p class="hint" style="margin:4px 0 8px">After each name you can type M or F and B, I, A or O (or words like Female, Adv). Anything left out uses the gender and level chosen above.</p>'+bprevHtml()+'<div class="pick2"><button class="ghost" data-act="bprev"'+dis+'>Preview</button><button class="btn" data-act="addmany"'+dis+'>'+ic("plus")+'Add all</button></div>'
     +(PRO?'<div class="row2" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="ghost" data-act="rsave">Save players as my regulars</button><button class="ghost" data-act="rload"'+dis+'>Add my regulars ('+rosterGet().length+')</button></div>':'<button class="ghost full" style="margin-top:10px" data-act="gopro">My regular players (Pro)</button>')+'</details>';
   var rk=S.pl.slice().sort(function(a,b){return b.w-a.w||a.x-b.x});
   if(rk.some(function(p){return p.p}))h+='<h2>'+ic("trophy")+'Leaderboard</h2><ol class="board">'+rk.map(function(p,i){var l=i===0&&p.w>0;
     return'<li class="'+(l?"lead":"")+'"><span class="nm">'+(l?"Leading: ":"")+pn(p)+'<div class="em">'+emo(p)+'</div><small>pays '+money(owe(p))+'</small></span><span class="wl"><b>'+p.w+'</b> W &nbsp;<b>'+p.x+'</b> L</span></li>'}).join("")+'</ol>';
   if(!PRO&&S.pl.some(function(p){return p.p}))h+='<div class="lockbox"><b>'+ic("chart")+'Games played ranking (Pro)</b><p class="hint" style="margin:0 0 8px">See every player\u2019s games, wins and losses, and export them to PDF, with NetPlay Pro.</p><button class="ghost" data-act="gopro">Unlock with a Pro code</button></div>';
-  else if(S.pl.some(function(p){return p.p}))h+='<h2>'+ic("chart")+'Games played ranking</h2><ol class="board">'+S.pl.slice().sort(function(a,b){return b.p-a.p||a.n.localeCompare(b.n)}).map(function(p){return'<li><span class="nm">'+av(p)+esc(p.n)+'<span class="lv">'+SH[p.l]+'</span><div class="em">'+emo(p)+'</div></span><span class="wl"><b>'+p.p+'</b> GP</span></li>'}).join("")+'</ol><button class="ghost" style="margin-top:10px" data-act="rkpdf">'+ic("down")+'Export ranking (PDF)</button><p class="hint" id="rkmsg" style="margin:6px 0 0"></p>';
+  else if(S.pl.some(function(p){return p.p}))h+='<h2>'+ic("chart")+'Games played ranking</h2><ol class="board">'+S.pl.slice().sort(function(a,b){return b.p-a.p||a.n.localeCompare(b.n)}).map(function(p){return'<li><span class="nm">'+av(p)+esc(p.n)+'<span class="lv">'+SH[p.l]+'</span><div class="em">'+emo(p)+'</div></span><span class="wl"><b>'+p.p+'</b> GP</span></li>'}).join("")+'</ol>';
   var gm=S.g.filter(function(g){return g.ms});
   if(gm.length){var tm=gm.reduce(function(a,g){return a+g.ms},0),pc={};
     gm.forEach(function(g){pc[g.c]=pc[g.c]||[0,0];pc[g.c][0]++;pc[g.c][1]+=g.ms});
@@ -852,7 +896,7 @@ function render(){
 }
 document.addEventListener("click",function(e){
   var t=e.target.closest("[data-act]");if(!t)return;
-  var act=t.dataset.act,v=t.dataset.v,c=S.courts[+t.dataset.c];
+  var act=t.dataset.act,v=t.dataset.v,c=cget(t.dataset.c);
   if(act==="rule"){snap();if(v==="rot")S.mode="rot";else{S.mode="stay";S.max=v==="s2"?2:3}}
   else if(act==="undo"){if(UNDO.length)S=JSON.parse(UNDO.pop())}
   else if(act==="nc"){
@@ -879,9 +923,8 @@ document.addEventListener("click",function(e){
   else if(act==="prv"){if(!canEdit())return;S.rv=S.rv===v?null:v}
   else if(act==="prvx"){S.rv=null}
   else if(act==="prvc"){if(!canEdit())return;revTx(v)}
-  else if(act==="rkpdf"){if(!PRO){needPro("Exporting the ranking");return}exportRankPdf();return}
   else if(act==="pxl"){if(!PRO){needPro("Excel export");return}if(canEdit())exportXlsx();return}
-  else if(act==="ppdf"){if(!PRO){needPro("PDF export");return}if(canEdit())exportPdf();return}
+  else if(act==="ppdfp"||act==="ppdfq"){if(!PRO){needPro("PDF export");return}if(canEdit())exportPdf(act==="ppdfq"?"qm":"player");return}
   else if(act==="lay"){S.lay=v;if(window.applyLayout)applyLayout()}
   else if(act==="fx"){if(!PRO&&v!=="1"){needPro("Split total");return}snap();S.cf.fixed=v==="1"}
   else if(act==="end"){if(S.courts.some(function(cc){return cc.run}))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg="";recordSession()}}
@@ -896,18 +939,27 @@ document.addEventListener("click",function(e){
   else if(act==="trial"){if(trialGet()){toast("The free trial was already used on this device.")}else{trialSave({t0:Date.now(),d:[]});setPro();toast("Free trial started. Pro is unlocked for 2 uses.")}}
   else if(act==="gopro"){S.mo=true;save();render();var ps=document.getElementById("prosec");if(ps)ps.scrollIntoView({block:"center"});return}
   else if(act==="creset"){snap();S.q=S.q.concat(c.keep);c.keep=[];c.s=0;c.sel=["","","",""];c.last=null;c.msg=""}
+  else if(act==="nxclr"){snap();c.sel=["","","",""];c.msg=""}
+  else if(act==="nxmv"){var tc=S.courts[+v];if(!tc||tc.run||tc.sel.some(Boolean)||tc.keep.length||!c.sel.every(Boolean)){return}
+    snap();tc.sel=c.sel.slice();tc.msg="";c.sel=["","","",""];c.msg="";fill(c);if(!c.sel.some(Boolean))c.msg=""}
+  else if(act==="nxadd"){if(!PRO){toast("Multiple waiting lists are available in the Pro version. Open Menu to enter your Pro code.");return}snap();if(S.nx.length<NX_MAX)S.nx.push(nxNew())}
+  else if(act==="nxrm"){snap();S.nx.splice(+t.dataset.c-100,1)}
   else if(act==="fill"){fill(c)}
   else if(act==="go"){snap();go(c)}
   else if(act==="win"&&c.run){snap();if(result(+t.dataset.c,+v)===false)UNDO.pop()}
   else if(act==="rest"){snap();var p=P(v);p.rest=!p.rest}
   else if(act==="clear"){if(!S.q.length)return;if(!armed("clear",t,"Tap again to remove all "+S.q.length+" waiting players"))return;{snap();var gone=S.q.slice();S.pl=S.pl.filter(function(p){return gone.indexOf(p.id)<0});S.q=[];S.courts.forEach(function(cc){cc.sel=cc.sel.map(function(x){return gone.indexOf(x)<0?x:""});cc.keep=cc.keep.filter(function(x){return gone.indexOf(x)<0})})}}
+  else if(act==="bprev"){var bt2=document.getElementById("bulk");if(bt2)BULKTXT=bt2.value;BPREV=parseBulk(BULKTXT,S.ng,S.nl);S.bo=true;if(!BPREV.length){BPREV=null;toast("Type or paste some names first.")}}
+  else if(act==="bg"&&BPREV){BPREV[+v].g=BPREV[+v].g==="F"?"M":"F"}
+  else if(act==="bl"&&BPREV){BPREV[+v].l=(BPREV[+v].l+1)%4}
+  else if(act==="bx"&&BPREV){BPREV.splice(+v,1);if(!BPREV.length)BPREV=null}
   else if(act==="addmany"){
     if(S.courts.some(function(cc){return cc.run}))return;
-    var bt=document.getElementById("bulk"),nm=bt?bt.value.split(/[\n,;]+/).map(function(x){return x.trim().slice(0,24)}).filter(Boolean):[];
+    var bt=document.getElementById("bulk"),nm=BPREV||parseBulk(bt?bt.value:BULKTXT,S.ng,S.nl);
     var have={};S.pl.forEach(function(p){have[p.n.toLowerCase()]=1});var add=[],skip=0;
-    nm.forEach(function(n){if(have[n.toLowerCase()]){skip++}else{have[n.toLowerCase()]=1;add.push(n)}});
+    nm.forEach(function(x){if(have[x.n.toLowerCase()]){skip++}else{have[x.n.toLowerCase()]=1;add.push(x)}});
     if(!add.length){toast(nm.length?"Those names are already in the list.":"Type or paste some names first.");return}
-    snap();add.forEach(function(n){var q=newPl(n,S.ng,S.nl);S.pl.push(q);S.q.push(q.id)});BULKTXT="";S.bo=true;
+    snap();add.forEach(function(x){var q=newPl(x.n,x.g,x.l);S.pl.push(q);S.q.push(q.id)});BULKTXT="";BPREV=null;S.bo=true;
     toast(add.length+" player"+(add.length===1?"":"s")+" added"+(skip?", "+skip+" already in the list":"")+".")}
   else if(act==="rsave"){if(!PRO){needPro("My regular players");return}var r=rosterGet(),m={};r.forEach(function(x){m[x.n.toLowerCase()]=x});S.pl.forEach(function(p){m[p.n.toLowerCase()]={n:p.n,g:p.g,l:p.l}});var arr=Object.keys(m).map(function(k){return m[k]});rosterSave(arr);toast("Saved. You have "+arr.length+" regular players.")}
   else if(act==="rload"){if(!PRO){needPro("My regular players");return}if(S.courts.some(function(cc){return cc.run}))return;var r2=rosterGet(),have2={};S.pl.forEach(function(p){have2[p.n.toLowerCase()]=1});var ad=r2.filter(function(x){return !have2[x.n.toLowerCase()]});if(!ad.length){toast(r2.length?"All your regulars are already in the list.":"No regulars saved yet. Add players, then tap Save players as my regulars.");return}snap();ad.forEach(function(x){var q=newPl(x.n,x.g,x.l);S.pl.push(q);S.q.push(q.id)});S.bo=true;toast(ad.length+" regular player"+(ad.length===1?"":"s")+" added.")}
@@ -930,7 +982,7 @@ document.addEventListener("click",function(e){
   else if(act==="share"){var tx=summaryText();if(navigator.share){navigator.share({text:tx}).catch(function(){copyText(tx,"Summary copied. Paste it in your group chat.")})}else copyText(tx,"Summary copied. Paste it in your group chat.");return}
   else if(act==="remind"){if(!PRO){needPro("Payment reminders");return}var rt=reminderText();if(!rt){toast("Nobody has an unpaid balance.");return}copyText(rt,"Reminders copied. Paste them into your chat.");return}
   else if(act==="del"){if(!armed("del"+v,t,"Remove?"))return;snap();S.pl=S.pl.filter(function(p){return p.id!==v});S.q=S.q.filter(function(i){return i!==v});
-    S.courts.forEach(function(cc){cc.sel=cc.sel.map(function(x){return x===v?"":x});cc.keep=cc.keep.filter(function(x){return x!==v})})}
+    S.courts.concat(S.nx||[]).forEach(function(cc){cc.sel=cc.sel.map(function(x){return x===v?"":x});cc.keep=cc.keep.filter(function(x){return x!==v})})}
   else if(act==="add"){
     if(S.courts.some(function(cc){return cc.run}))return;
     var n=document.getElementById("nm").value.trim();
@@ -954,8 +1006,8 @@ document.addEventListener("change",function(e){
     if(!nv.length)S.cnmsg="Enter at least one court number.";
     else if(S.courts.slice(nv.length).some(function(c){return c.run||c.keep.length}))S.cnmsg="Finish the games on the extra courts first.";
     else{var lm=S.cnmsg;S.cn=nv.join(", ");S.courts=S.courts.slice(0,nv.length);S.cnmsg=lm}}
-  else if(f==="cf"){S.cf[d.k]=e.target.value}else if(f==="sel"){var c=S.courts[+d.c];c.sel[+d.s]=e.target.value;c.msg=""}
-  else if(f==="ccat"){var nc2=e.target.value;if(!PRO&&PROCATS.indexOf(nc2)>=0&&nc2!==S.courts[+d.c].cat){toast("That category is a Pro feature. Open Menu to enter your Pro code.")}else S.courts[+d.c].cat=nc2}
+  else if(f==="cf"){S.cf[d.k]=e.target.value}else if(f==="sel"){var c=cget(d.c);c.sel[+d.s]=e.target.value;c.msg=""}
+  else if(f==="ccat"){var nc2=e.target.value;if(!PRO&&PROCATS.indexOf(nc2)>=0&&nc2!==cget(d.c).cat){toast("That category is a Pro feature. Open Menu to enter your Pro code.")}else cget(d.c).cat=nc2}
   else S[f]=e.target.value;
   save();render();
   var n2=document.getElementById("nm");if(n2)n2.value=keep;
@@ -969,7 +1021,7 @@ setInterval(function(){var b=document.querySelector('[data-act="end"]');if(b&&S.
 document.addEventListener("input",function(e){var i=e.target.id;
   if(i==="psrch"){S.ps=e.target.value;var l=document.getElementById("paylist");if(l)l.innerHTML=payList()}
   else if(i==="pa"||i==="pdue")balPreview();
-  else if(i==="bulk")BULKTXT=e.target.value});
+  else if(i==="bulk"){BULKTXT=e.target.value;if(BPREV){BPREV=null;var bp=document.getElementById("bprev");if(bp)bp.remove()}}});
 document.addEventListener("toggle",function(e){var i=e.target.id;if(i==="menu"||i==="paymenu"){S[i==="menu"?"mo":"po"]=e.target.open;save()}else if(i==="morep"){S.bo=e.target.open;save()}},true);
 setInterval(function(){var ck=document.getElementById("clock");if(ck)ck.textContent=nowTxt();document.querySelectorAll("[data-t0]").forEach(function(el){el.textContent=fmt(Date.now()-(+el.dataset.t0))});},1000);
 (function(){var r0=render;render=function(){r0();applyLang()}})();
