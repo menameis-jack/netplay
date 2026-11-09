@@ -335,9 +335,9 @@ function signed(a){return(a<0?"-":"+")+money(Math.abs(a))}
 function payChip(p){var s=pst(p);return'<span class="chip st-'+s+'" style="margin-left:6px">'+SLBL[s]+'</span>'}
 function payFull(p){
   var b=Math.round(Math.max(0,dueOf(p)-paidOf(p))*100)/100;
-  if(!S.org){S.pmsg='Enter the organizer name under "Received by" first.';return}
+  if(!S.org){S.pmsg='Enter the organizer name under "Received by" first.';toast(S.pmsg);return}
   if(b<=.005)return;
-  if(dupe(p,b,S.lm||"Cash")){S.pmsg="A payment of this amount was just recorded.";return}
+  if(dupe(p,b,S.lm||"Cash")){S.pmsg="A payment of this amount was just recorded.";toast(S.pmsg);return}
   snap();post({id:p.id,n:p.n,a:b,m:S.lm||"Cash",k:"Payment",by:S.org,r:"Paid in full"});S.pmsg="";
 }
 function payForm(id){
@@ -381,7 +381,7 @@ function payList(){
     var s=pst(p),d=s==="exempt"?0:dueOf(p),a=paidOf(p),b=s==="exempt"?0:Math.max(0,d-a),l=lastTx(p),r=pr(p);
     var op=!!(S.pxo&&S.pxo[p.id])||S.pp===p.id;
     var h='<li><button type="button" class="pname" data-act="ptog" data-v="'+p.id+'" aria-expanded="'+op+'">'+av(p)+'<span class="pn1">'+esc(p.n)+'</span><span class="chip st-'+s+'">'+LBL[s]+'</span><span class="chev" aria-hidden="true">'+(op?"\u25BE":"\u25B8")+'</span></button>';
-    if(!op)return h+'</li>';
+    if(!op)return h+((ed&&s!=="exempt"&&b>0)?'<div class="pact" style="align-items:center;margin:0 0 4px"><span class="hint" style="margin:0 auto 0 0">Balance '+money(b)+'</span><button class="sm" data-act="pfull" data-v="'+p.id+'">Paid in full</button></div>':'')+'</li>';
     h+=(ed?'<div class="pact"><button class="sm" data-act="pgo" data-v="'+p.id+'">'+(S.pp===p.id?"Close":"Record payment")+'</button></div>':'')
       +'<div class="pstat"><div><span>Amount due</span>'+money(d)+'</div><div><span>Amount paid</span>'+money(a)+'</div><div><span>Balance</span>'+money(b)+'</div></div>'
       +(l?'<div class="hint" style="margin:0 0 6px">Last payment '+esc(txDate(l))+' '+txTime(l).slice(0,5)+', '+esc(mOf(l))+'</div>':'');
@@ -389,6 +389,7 @@ function payList(){
       h+='<div class="pact">';
       if(s!=="exempt"&&b>0)h+='<button class="sm" data-act="pfull" data-v="'+p.id+'">Paid in full</button>';
       h+='<button class="sm" data-act="pex" data-v="'+p.id+'">'+(r.ex?"Remove exemption":"Exempt")+'</button><button class="sm" data-act="rcpt" data-v="'+p.id+'">Copy receipt</button></div>';
+      if(s!=="exempt"&&s!=="paid"&&b<=0)h+='<div class="hint" style="margin:0 0 6px">No amount due yet, so Paid in full is hidden. Set the costs, or type an Amount due under Record payment.</div>';
       if(S.pp===p.id)h+='<div class="pform" id="pform"><div class="hint" style="margin:0">Player: <b>'+esc(p.n)+'</b> (ID '+esc(p.id)+')</div>'
         +'<label class="hint">Amount received<input id="pa" type="number" inputmode="decimal" step="0.01" min="0" placeholder="'+b.toFixed(2)+'"></label><div class="hint" id="pbal" style="margin:0;font-weight:700">Balance now: '+money(b)+'</div>'
         +'<label class="hint">Payment method<select id="pm" aria-label="Payment method">'+METH.map(function(m){return'<option'+(m===(S.lm||"Cash")?" selected":"")+'>'+m+'</option>'}).join("")+'</select></label>'
