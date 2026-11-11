@@ -910,7 +910,7 @@ function nxBlock(){
   if(S.ended)return"";var L=nxl(),idle=[];
   S.courts.forEach(function(c,i){if(!c.run&&!c.sel.some(Boolean)&&!c.keep.length)idle.push(i)});
   var h=L.map(function(n,ni){var ci=100+ni,full=n.sel.every(Boolean);
-    var x='<section class="court"><div class="chead"><b>'+ic('racket')+'Next up'+(L.length>1?" "+(ni+1):"")+'</b>'+(ni>0?'<button class="ghost" data-act="nxrm" data-c="'+ci+'">Remove</button>':'')+'</div><div class="chead"><select data-f="ccat" data-c="'+ci+'" aria-label="Category">'+SHOW.map(function(k){return CATS.filter(function(y){return y[0]===k})[0]}).map(function(y){return'<option value="'+y[0]+'"'+(y[0]===n.cat?" selected":"")+'>'+y[1]+(!PRO&&PROCATS.indexOf(y[0])>=0?" (Pro)":"")+'</option>'}).join("")+'</select></div>'
+    var x='<section class="court"><div class="chead"><b>'+sic()+'Next up'+(L.length>1?" "+(ni+1):"")+'</b>'+(ni>0?'<button class="ghost" data-act="nxrm" data-c="'+ci+'">Remove</button>':'')+'</div><div class="chead"><select data-f="ccat" data-c="'+ci+'" aria-label="Category">'+SHOW.map(function(k){return CATS.filter(function(y){return y[0]===k})[0]}).map(function(y){return'<option value="'+y[0]+'"'+(y[0]===n.cat?" selected":"")+'>'+y[1]+(!PRO&&PROCATS.indexOf(y[0])>=0?" (Pro)":"")+'</option>'}).join("")+'</select></div>'
     +'<div class="pick"><div class="tl">Team A</div>'+selHtml(n,ci,0)+selHtml(n,ci,1)+'<div class="vs">versus</div><div class="tl">Team B</div>'+selHtml(n,ci,2)+selHtml(n,ci,3)+'</div>';
     var w=comp(n)||n.msg;if(w)x+='<p class="warn">'+esc(w)+'</p>';
     x+='<div class="pick2"><button class="wbtn" data-act="fill" data-c="'+ci+'">'+ic("wand")+'Auto fill</button>'+(n.sel.some(Boolean)?'<button class="wbtn" data-act="nxclr" data-c="'+ci+'">Clear</button>':'')+'</div>';
