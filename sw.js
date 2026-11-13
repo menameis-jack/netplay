@@ -1,5 +1,5 @@
 /* NetPlay Queue offline support. Bump VERSION when this file changes. */
-const VERSION = "np-offline-2";
+const VERSION = "np-offline-3";
 const CORE = ["./", "index.html"];
 const LIBS = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
@@ -63,7 +63,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(networkFirst(req, "index.html"));
     return;
   }
-  // The cancelled-codes list must always come fresh from the internet, so it is never stored here.
-  if (url.pathname.endsWith("/sw.js") || url.pathname.endsWith("/revoked.json")) return;
+  // The cancelled-codes list and the version file must always come fresh from the internet, so it is never stored here.
+  if (url.pathname.endsWith("/sw.js") || url.pathname.endsWith("/revoked.json") || url.pathname.endsWith("/version.json")) return;
   event.respondWith(networkFirst(req));
 });
