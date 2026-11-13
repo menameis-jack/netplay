@@ -587,7 +587,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=137,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=138,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -722,7 +722,7 @@ function tnGameOk(a,b,T){var x=String(a).trim(),y=String(b).trim();if(x===""||y=
   a=+x;b=+y;var hi=Math.max(a,b),lo=Math.min(a,b);
   if(hi<T)return"A game is played to "+T+". The winner needs at least "+T+" points.";
   if(hi===T&&lo>T-2)return"At "+a+"-"+b+" the game is not over. From "+(T-1)+"-"+(T-1)+" it goes to deuce and continues until one side leads by 2.";
-  if(hi>T&&hi-lo!==2)return"After deuce the winner leads by exactly 2, for example "+(T+1)+"-"+(T-1)+".";
+  if(hi>T&&hi-lo<2)return"The winner must lead by at least 2 points.";
   return""}
 function tnStand(){var T=TN(),st={},a,out=[],i=0,j;
   T.pairs.forEach(function(p){st[p.id]={p:p,gp:0,w:0,x:0,pt:0,pf:0,pa:0}});
