@@ -580,7 +580,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=131,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=132,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -608,18 +608,18 @@ function liveDemo(){try{return new URL("live.html",location.href).href.split("?"
 function liveAge(){if(!LIVE.on)return;if(!LIVE.st){LIVE.st=Date.now();liveStore();return}if(Date.now()-LIVE.st>6048e5)liveStop("The live page was removed because it was not used for 7 days. Tap Start live page to make a new one.")}
 function liveUrl(){try{return new URL("live.html",location.href).href.split("?")[0]+"?c="+LIVE.code+"&l="+encodeURIComponent(LANG||"en")}catch(e){return""}}
 function liveSnap(){
-  if(S.ended)return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",e:1,courts:[],next:[],rk:[]};
+  if(S.ended)return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",e:1,courts:[],nc:[],next:[],rk:[]};
   var L=labels(),nm=function(id){var p=P(id);return p?p.n:""},courts=[];
-  S.courts.forEach(function(c,i){if(!c.run)return;var ct=CATS.filter(function(x){return x[0]===c.cat})[0];
+  var nc=[];S.courts.forEach(function(c,i){if(!c.run){var pp=c.sel.map(nm).filter(Boolean);if(pp.length)nc.push({n:L[i]||String(i+1),p:pp});return}var ct=CATS.filter(function(x){return x[0]===c.cat})[0];
     courts.push({n:L[i]||String(i+1),cat:ct?ct[1]:"",a:c.run.t[0].map(nm).filter(Boolean),b:c.run.t[1].map(nm).filter(Boolean),t0:c.run.t0||0})});
   var next=nxl().map(function(c){return c.sel.map(nm).filter(Boolean)}).filter(function(a){return a.length});
   var rk=S.pl.slice().sort(function(a,b){return b.w-a.w||a.x-b.x||b.p-a.p||a.n.localeCompare(b.n)}).filter(function(p){return p.p}).slice(0,40).map(function(p){return{n:p.n,l:SH[p.l]||"",w:p.w,x:p.x,p:p.p}});
-  return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",courts:courts,next:next,rk:rk}}
+  return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",courts:courts,nc:nc,next:next,rk:rk}}
 var LIVEH="",LIVETM=0,LIVEBUSY=false;
 function liveSoon(){clearTimeout(LIVETM);LIVETM=setTimeout(function(){livePush(false)},1500)}
 async function livePush(force){
   if(!liveOk()||!LIVE.on||!LIVE.code||LIVEBUSY)return;
-  var snap=liveSnap(),h=JSON.stringify([snap.sp,snap.gd,snap.e,snap.courts,snap.next,snap.rk]);
+  var snap=liveSnap(),h=JSON.stringify([snap.sp,snap.gd,snap.e,snap.courts,snap.nc,snap.next,snap.rk]);
   if(!force&&h===LIVEH&&Date.now()-LIVET<9e4)return;
   LIVEBUSY=true;
   try{
