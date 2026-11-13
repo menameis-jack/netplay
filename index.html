@@ -587,7 +587,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=139,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=140,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -785,8 +785,10 @@ function tnRun(m,head){var T=TN(),A=tnPair(m.a),B=tnPair(m.b),fin=m.k==="f",mx=f
   if(m.g&&m.g.length)h+='<p class="streak" style="margin:4px 0 0">Games: '+m.g.map(tnGs).join(", ")+'</p>';
   h+='<div class="pick2" style="margin-top:8px"><button class="wbtn" data-act="tnback" data-v="'+m.id+'">'+(m.old?"Cancel edit":"Cancel game")+'</button></div></section>';
   return h}
+function tnPickSel(lb,k){var T=TN(),bz=tnBusy(),pk=(T.pick&&T.pick[lb])||["",""],other=pk[1-k],cur=pk[k];
+  return'<select data-tpick="'+esc(lb)+'" data-s="'+k+'" aria-label="Team '+"AB".charAt(k)+': choose pair"><option value="">Team '+"AB".charAt(k)+': choose pair</option>'+T.pairs.filter(function(p){return(!bz[p.id]&&p.id!==other)||p.id===cur}).map(function(p){return'<option value="'+p.id+'"'+(p.id===cur?" selected":"")+'>\ud83d\udd12 '+esc(tnLbl(p))+'</option>'}).join("")+'</select>'}
 function tnCourt(lb){var T=TN(),m=T.ms.filter(function(x){return(x.st==="a"||x.st==="r")&&x.c===lb})[0],head=sic()+'Court '+esc(lb);
-  if(!m)return'<section class="court"><div class="chead"><b>'+head+'</b></div><p class="hint" style="margin:8px 0 0">Free. Pick a match in Next up and tap Move to Court '+esc(lb)+'.</p></section>';
+  if(!m)return'<section class="court"><div class="chead"><b>'+head+'</b></div><div class="pick"><div class="tl">Team A</div>'+tnPickSel(lb,0)+'<div class="vs">versus</div><div class="tl">Team B</div>'+tnPickSel(lb,1)+'</div><div class="pick2"><button class="wbtn" data-act="tnfill" data-k="'+esc(lb)+'">'+ic("wand")+'Auto fill</button><button class="win" data-act="tnpickgo" data-k="'+esc(lb)+'">'+ic("play")+'Start game</button></div></section>';
   if(m.st==="r")return tnRun(m,head);
   var A=tnPair(m.a),B=tnPair(m.b);
   return'<section class="court"><div class="chead"><b>'+head+'</b><span class="streak">'+(m.k==="f"?"Final":"Group stage")+'</span></div><div class="sides">'
@@ -826,7 +828,15 @@ function tnAct(act,t){
   else if(act==="tnlock"){if(T.stage!=="setup"||tnPairOf(v))return;if(!T.sel)T.sel=v;else if(T.sel===v)T.sel="";else{var a=P(T.sel),b=P(v);if(a&&b){snap();T.pairs.push({id:uid(),a:a.id,b:b.id,an:a.n,bn:b.n})}T.sel=""}}
   else if(act==="tnunlock"){if(T.stage!=="setup")return;snap();T.pairs=T.pairs.filter(function(p){return p.id!==v});T.sel=""}
   else if(act==="tnstart"){if(T.pairs.length<3){toast("You need at least 3 pairs.");return}snap();T.ms=tnRR(T.pairs.map(function(p){return p.id})).map(function(x,i){return{id:"m"+i,a:x[0],b:x[1],k:"g",st:"w",c:"",t0:0,g:[],sc:null,win:"",dn:0}});T.stage="play";T.sel="";T.seq=0}
-  else if(act==="tnmove"){var cn=t.dataset.k,bz=tnBusy();if(!m||m.st!=="w"||bz[m.a]||bz[m.b])return;if(T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===cn})){toast("That court is busy.");return}snap();m.st="a";m.c=cn}
+  else if(act==="tnfill"){var fl=t.dataset.k,fm=tnAvail()[0];if(!fm){toast("No match is waiting.");return}T.pick=T.pick||{};T.pick[fl]=[fm.a,fm.b]}
+  else if(act==="tnpickgo"){var gl=t.dataset.k,pk=(T.pick&&T.pick[gl])||["",""];if(!pk[0]||!pk[1]){toast("Choose a pair for Team A and Team B first.");return}
+    var gm=T.ms.filter(function(x){return(x.a===pk[0]&&x.b===pk[1])||(x.a===pk[1]&&x.b===pk[0])})[0],gb=tnBusy();
+    if(!gm){toast("These two pairs do not play each other now.");return}
+    if(gm.st==="d"){toast("These two pairs already played. Use Edit under Results to change that result.");return}
+    if(gm.st!=="w"||gb[gm.a]||gb[gm.b]){toast("One of these pairs is already on a court.");return}
+    if(T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===gl})){toast("That court is busy.");return}
+    snap();if(gm.a!==pk[0]){gm.b=gm.a;gm.a=pk[0]}gm.st="r";gm.c=gl;gm.t0=Date.now();gm.sc=null;delete T.pick[gl]}
+  else if(act==="tnmove"){var cn=t.dataset.k,bz=tnBusy();if(!m||m.st!=="w"||bz[m.a]||bz[m.b])return;if(T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===cn})){toast("That court is busy.");return}snap();m.st="a";m.c=cn;if(T.pick)delete T.pick[cn]}
   else if(act==="tnstartg"){if(!m||m.st!=="a")return;snap();m.st="r";m.t0=Date.now();m.sc=null}
   else if(act==="tnback"){if(!m||(m.st!=="a"&&m.st!=="r"))return;snap();if(m.old){m.g=m.old.g;m.win=m.old.win;m.dn=m.old.dn;m.st="d";m.old=null;m.sc=null;tnAdvance()}else{m.st="w";m.c="";m.t0=0;m.g=[];m.sc=null}}
   else if(act==="tnwin"){if(!m||m.st!=="r")return;var s0=+t.dataset.s,sc=m.sc||["",""],has=String(sc[0]).trim()!==""&&String(sc[1]).trim()!=="";
@@ -836,6 +846,7 @@ function tnAct(act,t){
     snap();m.old={g:m.g.slice(),win:m.win,dn:m.dn};var lg=m.g[m.g.length-1];m.g=m.g.slice(0,-1);m.sc=lg[0]==null?["",""]:[String(lg[0]),String(lg[1])];m.st="r";m.win="";m.c="";tnAdvance()}
   else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();S.tn=tnNew();T=S.tn}
   var sy=window.scrollY;save();render();window.scrollTo(0,sy)}
+document.addEventListener("change",function(e){var el=e.target;if(!el||!el.dataset||el.dataset.tpick==null)return;var T=TN(),lb=el.dataset.tpick;T.pick=T.pick||{};T.pick[lb]=T.pick[lb]||["",""];T.pick[lb][+el.dataset.s]=el.value;save();var sy=window.scrollY;render();window.scrollTo(0,sy)});
 document.addEventListener("input",function(e){var el=e.target;if(!el||!el.dataset||!el.dataset.tsc)return;var m=TN().ms.filter(function(x){return x.id===el.dataset.tsc})[0];if(!m)return;
   m.sc=m.sc||["",""];m.sc[+el.dataset.s]=el.value;save();var mg=document.getElementById("tmg"+m.id);if(mg)mg.textContent=marg(m.sc)});
 
