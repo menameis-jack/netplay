@@ -87,7 +87,7 @@ function draw(){
   else if(age>OLD){dot.className="dot old";st.textContent=t.quiet+" ("+agoTxt(age)+")"}
   else{dot.className="dot ok";st.textContent=t.live+" "+agoTxt(age)}
   var h=D.e?'<div class="demo">'+esc(t.end)+'</div>':"",c=arr(D.courts),n=arr(D.next),r=arr(D.rk);if(code==="demo")h='<div class="demo">'+esc(t.demo)+'</div>';
-  if(D.tn)h+='<div class="tnb">\ud83c\udfc6 '+esc(t.tn)+' &middot; '+esc(D.st==="done"?t.td:D.st==="final"?t.tf:t.tg)+'</div>';
+  if(D.tn)h+='<div class="tnb">\ud83c\udfc6 '+esc(t.tn)+(D.st?' &middot; '+esc(D.st==="done"?t.td:D.st==="final"?t.tf:t.tg):'')+'</div>';
   var pd=arr(D.pod);if(pd.length)h+='<h2>'+esc(t.res)+'</h2><div class="card pod">'+pd.map(function(n,i){return'<div class="r"><span>'+["\ud83e\udd47","\ud83e\udd48","\ud83e\udd49"][i]+'</span><span style="flex:1;margin:0 10px">'+esc(n)+'</span></div>'}).join("")+'</div>';
   h+='<h2>'+esc(t.play)+(D.sp&&t[D.sp]?' · '+esc(t[D.sp]):'')+'</h2>';
   if(!c.length)h+='<div class="card empty">'+esc(t.none)+'</div>';

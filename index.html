@@ -587,7 +587,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=142,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=143,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -704,146 +704,108 @@ function qrSvg(txt){
   var q=4,sz=n+q*2,d2="";for(y=0;y<n;y++)for(x=0;x<n;x++)if(M[y][x])d2+="M"+(x+q)+","+(y+q)+"h1v1h-1z";
   return'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+sz+" "+sz+'" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="'+sz+'" height="'+sz+'" fill="#fff"/><path d="'+d2+'" fill="#000"/></svg>'}
 
-/* ---- Tournament: locked pairs, group stage, final ---- */
-function tnNew(){return{stage:"setup",fmt:{t:30,ft:30,bo:3,fin:0},pairs:[],ms:[],sel:"",seq:0}}
-function TN(){if(!S.tn||typeof S.tn!=="object"||!S.tn.fmt)S.tn=tnNew();return S.tn}
-function tnLockBtn(p){var T=S.tn;if(T&&T.stage&&T.stage!=="setup")return"";var pr=T&&T.pairs?T.pairs.filter(function(x){return x.a===p.id||x.b===p.id})[0]:null;
-  if(pr)return'<button class="sm" data-act="tnunlock" data-v="'+pr.id+'">\ud83d\udd12 Unlock</button>';
+/* ---- Tournament: locked pairs, free choice of pair vs pair on every court ---- */
+function tnNew(){return{pairs:[],ms:[],sel:"",seq:0,nx:["",""],mk:["",""],pick:{}}}
+function TN(){var T=S.tn;if(!T||typeof T!=="object"||!Array.isArray(T.pairs)||!Array.isArray(T.ms))T=S.tn=tnNew();
+  if(T.stage||T.fmt){T.ms=T.ms.filter(function(m){return m.st!=="w"});delete T.stage;delete T.fmt}
+  if(!T.nx)T.nx=["",""];if(!T.mk)T.mk=["",""];if(!T.pick)T.pick={};return T}
+function tnLockBtn(p){var T=S.tn,pr=T&&T.pairs?T.pairs.filter(function(x){return x.a===p.id||x.b===p.id})[0]:null;
+  if(pr)return'<button class="sm" data-act="tnunlock" data-v="'+pr.id+'">🔒 Unlock</button>';
   var sel=T&&T.sel?P(T.sel):null;
   if(sel&&sel.id===p.id)return'<button class="sm" data-act="tnlock" data-v="'+p.id+'">Cancel</button>';
-  return'<button class="sm" data-act="tnlock" data-v="'+p.id+'">\ud83d\udd12 '+(sel?"Lock with "+esc(sel.n):"Lock partner")+'</button>'}
-function tnLk(p){try{return S.tn&&S.tn.pairs&&S.tn.pairs.some(function(x){return x.a===p.id||x.b===p.id})?" \ud83d\udd12":""}catch(e){return""}}
+  return'<button class="sm" data-act="tnlock" data-v="'+p.id+'">🔒 '+(sel?"Lock with "+esc(sel.n):"Lock partner")+'</button>'}
+function tnLk(p){try{return S.tn&&S.tn.pairs&&S.tn.pairs.some(function(x){return x.a===p.id||x.b===p.id})?" 🔒":""}catch(e){return""}}
 function tnPair(id){return TN().pairs.filter(function(p){return p.id===id})[0]}
 function tnLbl(p){return p?p.an+" / "+p.bn:""}
 function tnPairOf(pid){return TN().pairs.filter(function(p){return p.a===pid||p.b===pid})[0]}
-function tnRR(ids){var a=ids.slice(),r=[],n,i,j;if(a.length%2)a.push(null);n=a.length;
-  for(i=0;i<n-1;i++){for(j=0;j<n/2;j++){var x=a[j],y=a[n-1-j];if(x&&y)r.push([x,y])}a.splice(1,0,a.pop())}return r}
-function tnGameOk(a,b,T){var x=String(a).trim(),y=String(b).trim();if(x===""||y===""||isNaN(+x)||isNaN(+y)||+x<0||+y<0||(+x)%1||(+y)%1)return"Enter both scores as whole numbers.";
-  a=+x;b=+y;var hi=Math.max(a,b),lo=Math.min(a,b);
-  if(hi<T)return"A game is played to "+T+". The winner needs at least "+T+" points.";
-  if(hi===T&&lo>T-2)return"At "+a+"-"+b+" the game is not over. From "+(T-1)+"-"+(T-1)+" it goes to deuce and continues until one side leads by 2.";
-  if(hi>T&&hi-lo<2)return"The winner must lead by at least 2 points.";
-  return""}
-function tnStand(){var T=TN(),st={},a,out=[],i=0,j;
-  T.pairs.forEach(function(p){st[p.id]={p:p,gp:0,w:0,x:0,pt:0,pf:0,pa:0}});
-  T.ms.forEach(function(m){if(m.k!=="g"||m.st!=="d"||!m.g||!m.g[0])return;var A=st[m.a],B=st[m.b];if(!A||!B)return;var ga=+m.g[0][0]||0,gb=+m.g[0][1]||0;
-    A.gp++;B.gp++;A.pf+=ga;A.pa+=gb;B.pf+=gb;B.pa+=ga;if(m.win===m.a){A.w++;A.pt+=2;B.x++}else{B.w++;B.pt+=2;A.x++}});
-  a=Object.keys(st).map(function(k){var o=st[k];o.pd=o.pf-o.pa;return o});
-  a.sort(function(x,y){return y.pt-x.pt||x.p.an.localeCompare(y.p.an)});
-  while(i<a.length){j=i;while(j<a.length&&a[j].pt===a[i].pt)j++;var g=a.slice(i,j);
-    if(g.length>1){var ids=g.map(function(o){return o.p.id});g.forEach(function(o){o.h=0});
-      T.ms.forEach(function(m){if(m.k!=="g"||m.st!=="d"||ids.indexOf(m.a)<0||ids.indexOf(m.b)<0)return;g.forEach(function(o){if(o.p.id===m.win)o.h+=2})});
-      g.sort(function(x,y){return y.h-x.h||(y.w-y.x)-(x.w-x.x)||y.pd-x.pd||x.p.an.localeCompare(y.p.an)})}
-    out=out.concat(g);i=j}
-  return out}
-function tnBusy(){var b={};TN().ms.forEach(function(m){if(m.st==="a"||m.st==="r"){b[m.a]=1;b[m.b]=1}});return b}
-function tnAvail(){var T=TN(),b=tnBusy(),last={},idx=0;
-  T.ms.forEach(function(m){if(m.st==="d"){last[m.a]=Math.max(last[m.a]||0,m.dn||0);last[m.b]=Math.max(last[m.b]||0,m.dn||0)}});
-  return T.ms.map(function(m,i){m.o=i;return m}).filter(function(m){return m.st==="w"&&!b[m.a]&&!b[m.b]})
-    .sort(function(x,y){return((last[x.a]||0)+(last[x.b]||0))-((last[y.a]||0)+(last[y.b]||0))||x.o-y.o})}
-function tnAdvance(){var T=TN(),g=T.ms.filter(function(m){return m.k==="g"}),f=T.ms.filter(function(m){return m.k==="f"})[0];
-  if(T.stage==="setup")return;
-  if(g.some(function(m){return m.st!=="d"})){if(f&&f.st==="w")T.ms=T.ms.filter(function(m){return m.k!=="f"});T.stage="play";return}
-  if(!f){T.stage="done";return}
-  T.stage=f.st==="d"?"done":"final"}
-function tnPodium(){var T=TN(),s=tnStand(),f=T.ms.filter(function(m){return m.k==="f"&&m.st==="d"})[0],r=[];
-  if(f){var lose=f.win===f.a?f.b:f.a;r=[f.win,lose];s.forEach(function(o){if(r.length<3&&r.indexOf(o.p.id)<0)r.push(o.p.id)})}
-  else r=s.slice(0,3).map(function(o){return o.p.id});
-  return r}
-function tnSnap(){var T=S.tn;if(!T||(T.stage!=="play"&&T.stage!=="final"&&T.stage!=="done"))return null;
-  var L=function(id){return tnLbl(tnPair(id))},courts=[],nc=[];
-  T.ms.forEach(function(m){if(m.st==="r"&&m.c)courts.push({n:m.c,cat:m.k==="f"?"tf":"tg",a:[L(m.a)],b:[L(m.b)],t0:m.t0||0});else if(m.st==="a"&&m.c)nc.push({n:m.c,p:[L(m.a),L(m.b)]})});
-  var tm=tnAvail().slice(0,6).map(function(m){return{a:L(m.a),b:L(m.b)}});
-  var rk=tnStand().map(function(o){return{n:tnLbl(o.p),w:o.w,x:o.x,p:o.gp,pt:o.pt}});
-  var pod=T.stage==="done"?tnPodium().map(L):[];
-  return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",tn:1,st:T.stage,courts:courts,nc:nc,next:[],tm:tm,rk:rk,pod:pod}}
 function tnIds(pr){var a=P(pr.a),b=P(pr.b);if(a&&b&&a.g!=="F"&&b.g==="F")return[pr.b,pr.a];return[pr.a,pr.b]}
 function tnPn(pr,id){var p=P(id);return p?pn(p):esc(id===pr.a?pr.an:pr.bn)}
 function tnNames(pr){return tnIds(pr).map(function(id){return tnPn(pr,id)}).join("<br>")}
 function tnPairLbl(pr){return tnIds(pr).map(function(id){var p=P(id);return(p?av(p):"")+esc(id===pr.a?pr.an:pr.bn)}).join(" - ")}
-function tnTg(m){var f=TN().fmt;return m.k==="f"?f.ft:f.t}
-function tnNeed(m){var f=TN().fmt;return m.k==="f"?Math.ceil(f.bo/2):1}
-function tnWins(m){var a=0,b=0;(m.g||[]).forEach(function(g){if(g[2]===0)a++;else if(g[2]===1)b++;else if(g[0]>g[1])a++;else b++});return[a,b]}
-function tnGs(g){return g[0]==null?"no score":g[0]+"-"+g[1]}
-function tnSeg(k,arr,cur){return'<div class="seg" role="group">'+arr.map(function(x){return'<button data-act="tnf" data-k="'+k+'" data-v="'+x[0]+'" aria-pressed="'+(String(x[0])===String(cur))+'">'+x[1]+'</button>'}).join("")+'</div>'}
-function tnSetupBox(){var T=TN(),f=T.fmt,n=T.pairs.length,mt=n*(n-1)/2,h='';
-  h+='<p class="hint" style="margin:6px 0">Make pairs: tap <b>🔒 Lock partner</b> on one player in the Waiting list below, then <b>🔒 Lock with ...</b> on the partner.</p>';
-  h+='<div class="hint" style="margin:8px 0 4px">Group stage: one game to</div>'+tnSeg("t",[[11,"11"],[15,"15"],[21,"21"],[30,"30"]],f.t)
-   +'<p class="hint" style="margin:10px 0 0">You type the score and tap the winning team. The winner is the team you tap.</p>';
-  h+='<div class="hint" style="margin:12px 0 4px"><b>Pairs ('+n+')</b></div>';
-  if(!n)h+='<p class="hint" style="margin:0">No pairs yet.</p>';else h+=T.pairs.map(function(p){return'<div class="tnrow"><span><b>🔒 '+tnPairLbl(p)+'</b></span><button class="sm" data-act="tnunlock" data-v="'+p.id+'">Unlock</button></div>'}).join("");
-  h+='<button class="win" style="width:100%;margin-top:10px" data-act="tnstart"'+(n<3?" disabled":"")+'>Start tournament'+(n>=3?" ("+mt+" group matches)":"")+'</button>'+(n<3?'<p class="hint" style="margin:6px 0 0">You need at least 3 pairs.</p>':'');
+function tnGs(g){return g&&g[0]!=null?g[0]+"-"+g[1]:"no score"}
+function tnBusy(){var b={};TN().ms.forEach(function(m){if(m.st==="a"||m.st==="r"){b[m.a]=1;b[m.b]=1}});return b}
+function tnStand(){var T=TN(),st={};T.pairs.forEach(function(p){st[p.id]={p:p,gp:0,w:0,x:0,pf:0,pa:0}});
+  T.ms.forEach(function(m){if(m.st!=="d"||m.k==="f")return;var A=st[m.a],B=st[m.b];if(!A||!B)return;var g=(m.g&&m.g[0])||[0,0],ga=+g[0]||0,gb=+g[1]||0;
+    A.gp++;B.gp++;A.pf+=ga;A.pa+=gb;B.pf+=gb;B.pa+=ga;if(m.win===m.a){A.w++;B.x++}else{B.w++;A.x++}});
+  return Object.keys(st).map(function(k){var o=st[k];o.pd=o.pf-o.pa;return o}).sort(function(a,b){return b.w-a.w||a.x-b.x||b.gp-a.gp||b.pd-a.pd||a.p.an.localeCompare(b.p.an)})}
+function tnAuto(excl){var T=TN(),bz=tnBusy(),last={};
+  T.ms.forEach(function(m){if(m.st==="d"){last[m.a]=Math.max(last[m.a]||0,m.dn||0);last[m.b]=Math.max(last[m.b]||0,m.dn||0)}});
+  var c=tnStand().filter(function(o){return !bz[o.p.id]&&excl.indexOf(o.p.id)<0}).sort(function(x,y){return x.gp-y.gp||(last[x.p.id]||0)-(last[y.p.id]||0)});
+  if(c.length<2)return null;var A=c[0].p.id;
+  function met(b){return T.ms.filter(function(m){return m.st==="d"&&((m.a===A&&m.b===b)||(m.b===A&&m.a===b))}).length}
+  var r=c.slice(1).sort(function(x,y){return met(x.p.id)-met(y.p.id)||x.gp-y.gp||(last[x.p.id]||0)-(last[y.p.id]||0)});
+  return[A,r[0].p.id]}
+function tnSnap(){var T=S.tn;if(!T||!S.tnv||!Array.isArray(T.pairs)||!T.pairs.length)return null;
+  var L=function(id){return tnLbl(tnPair(id))},courts=[],nc=[],tm=[];
+  T.ms.forEach(function(m){if(m.st==="r"&&m.c)courts.push({n:m.c,cat:"",a:[L(m.a)],b:[L(m.b)],t0:m.t0||0});else if(m.st==="a"&&m.c)nc.push({n:m.c,p:[L(m.a),L(m.b)]})});
+  if(T.nx&&T.nx[0]&&T.nx[1]&&tnPair(T.nx[0])&&tnPair(T.nx[1]))tm.push({a:L(T.nx[0]),b:L(T.nx[1])});
+  var rk=tnStand().map(function(o){return{n:tnLbl(o.p),w:o.w,x:o.x,p:o.gp}});
+  return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",tn:1,st:"",courts:courts,nc:nc,next:[],tm:tm,rk:rk,pod:[]}}
+function tnSelHtml(da,k,pk){var T=TN(),bz=tnBusy(),cur=pk[k],other=pk[1-k];
+  return'<select '+da+' data-s="'+k+'" aria-label="Team '+"AB".charAt(k)+': choose pair"><option value="">Team '+"AB".charAt(k)+': choose pair</option>'+T.pairs.filter(function(p){return(!bz[p.id]&&p.id!==other)||p.id===cur}).map(function(p){return'<option value="'+p.id+'"'+(p.id===cur?" selected":"")+'>🔒 '+esc(tnLbl(p))+'</option>'}).join("")+'</select>'}
+function tnRun(m,head){var A=tnPair(m.a),B=tnPair(m.b);if(!A||!B)return"";
+  var h='<section class="court m"><div class="chead"><b>'+head+'</b>'+(m.t0&&m.c?'<span class="tm">Started '+clk(m.t0)+'</span>':'')+'</div><div class="sides">'
+   +[A,B].map(function(pr,i){var v=(m.sc||[])[i];return'<div class="side"><div class="names">'+tnNames(pr)+'</div><div class="streak">Team '+"AB".charAt(i)+'</div><input class="score" type="number" inputmode="numeric" min="0" max="99" placeholder="Score" aria-label="Team '+"AB".charAt(i)+' score" data-tsc="'+m.id+'" data-s="'+i+'" value="'+(v==null?"":esc(v))+'"><button class="win" data-act="tnwin" data-v="'+m.id+'" data-s="'+i+'">🏆 Team '+"AB".charAt(i)+' won</button></div>'}).join("")
+   +'</div><p class="streak" id="tmg'+m.id+'" style="margin:10px 0 0">'+marg(m.sc)+'</p><div class="pick2" style="margin-top:8px"><button class="wbtn" data-act="tnback" data-v="'+m.id+'">'+(m.old?"Cancel edit":"Cancel game")+'</button></div></section>';
   return h}
-function tnRun(m,head){var T=TN(),A=tnPair(m.a),B=tnPair(m.b),fin=m.k==="f",mx=fin?T.fmt.bo:1,gi=(m.g||[]).length+1,w=tnWins(m),tg=tnTg(m),
-  ttl=(fin?"Final":"Group stage")+(mx>1?" · Game "+Math.min(gi,mx)+" of "+mx:"");
-  var h='<section class="court m"><div class="chead"><b>'+head+'</b><span class="streak">'+ttl+'</span>'+(m.t0&&m.c?'<span class="tm">Started '+clk(m.t0)+'</span>':'')+'</div><div class="sides">'
-   +[A,B].map(function(pr,i){var v=(m.sc||[])[i];return'<div class="side"><div class="names">'+tnNames(pr)+'</div><div class="streak">Team '+"AB".charAt(i)+(mx>1?" · "+w[i]+" won":"")+'</div><input class="score" type="number" inputmode="numeric" min="0" max="99" placeholder="Score" aria-label="Team '+"AB".charAt(i)+' score" data-tsc="'+m.id+'" data-s="'+i+'" value="'+(v==null?"":esc(v))+'"><button class="win" data-act="tnwin" data-v="'+m.id+'" data-s="'+i+'">🏆 Team '+"AB".charAt(i)+' won</button></div>'}).join("")
-   +'</div><p class="streak" id="tmg'+m.id+'" style="margin:10px 0 0">'+marg(m.sc)+'</p>';
-  if(m.g&&m.g.length)h+='<p class="streak" style="margin:4px 0 0">Games: '+m.g.map(tnGs).join(", ")+'</p>';
-  h+='<div class="pick2" style="margin-top:8px"><button class="wbtn" data-act="tnback" data-v="'+m.id+'">'+(m.old?"Cancel edit":"Cancel game")+'</button></div></section>';
-  return h}
-function tnPickSel(lb,k){var T=TN(),bz=tnBusy(),pk=(T.pick&&T.pick[lb])||["",""],other=pk[1-k],cur=pk[k];
-  return'<select data-tpick="'+esc(lb)+'" data-s="'+k+'" aria-label="Team '+"AB".charAt(k)+': choose pair"><option value="">Team '+"AB".charAt(k)+': choose pair</option>'+T.pairs.filter(function(p){return(!bz[p.id]&&p.id!==other)||p.id===cur}).map(function(p){return'<option value="'+p.id+'"'+(p.id===cur?" selected":"")+'>\ud83d\udd12 '+esc(tnLbl(p))+'</option>'}).join("")+'</select>'}
 function tnCourt(lb){var T=TN(),m=T.ms.filter(function(x){return(x.st==="a"||x.st==="r")&&x.c===lb})[0],head=sic()+'Court '+esc(lb);
-  if(!m)return'<section class="court"><div class="chead"><b>'+head+'</b></div><div class="pick"><div class="tl">Team A</div>'+tnPickSel(lb,0)+'<div class="vs">versus</div><div class="tl">Team B</div>'+tnPickSel(lb,1)+'</div><div class="pick2"><button class="wbtn" data-act="tnfill" data-k="'+esc(lb)+'">'+ic("wand")+'Auto fill</button><button class="win" data-act="tnpickgo" data-k="'+esc(lb)+'">'+ic("play")+'Start game</button></div></section>';
+  if(!m){var pk=T.pick[lb]||["",""];
+    return'<section class="court"><div class="chead"><b>'+head+'</b></div><div class="pick"><div class="tl">Team A</div>'+tnSelHtml('data-tpick="'+esc(lb)+'"',0,pk)+'<div class="vs">versus</div><div class="tl">Team B</div>'+tnSelHtml('data-tpick="'+esc(lb)+'"',1,pk)+'</div><div class="pick2"><button class="wbtn" data-act="tnfill" data-k="'+esc(lb)+'">'+ic("wand")+'Auto fill</button><button class="win" data-act="tnpickgo" data-k="'+esc(lb)+'">'+ic("play")+'Start game</button></div></section>'}
   if(m.st==="r")return tnRun(m,head);
-  var A=tnPair(m.a),B=tnPair(m.b);
-  return'<section class="court"><div class="chead"><b>'+head+'</b><span class="streak">'+(m.k==="f"?"Final":"Group stage")+'</span></div><div class="sides">'
+  var A=tnPair(m.a),B=tnPair(m.b);if(!A||!B)return"";
+  return'<section class="court"><div class="chead"><b>'+head+'</b><span class="streak">Go to the court</span></div><div class="sides">'
     +[A,B].map(function(pr,i){return'<div class="side"><div class="names">'+tnNames(pr)+'</div><div class="streak">Team '+"AB".charAt(i)+'</div></div>'}).join("")
     +'</div><div class="pick2" style="margin-top:8px"><button class="win" data-act="tnstartg" data-v="'+m.id+'">'+ic("play")+'Start game</button><button class="wbtn" data-act="tnback" data-v="'+m.id+'">Cancel</button></div></section>'}
-function tnNext(){var T=TN();if(T.stage==="setup"||T.stage==="done")return"";var av2=tnAvail(),left=T.ms.filter(function(m){return m.st==="w"}).length,busy={};
-  T.ms.forEach(function(m){if((m.st==="a"||m.st==="r")&&m.c)busy[m.c]=1});var idle=labels().filter(function(x){return !busy[x]});
-  var h='<section class="court"><div class="chead"><b>'+sic()+'Next up</b><span class="streak">'+left+' to play</span></div>';
-  if(!av2.length)h+='<p class="hint" style="margin:8px 0 0">'+(left?"The pairs left to play are on a court. Finish those games first.":"No matches waiting.")+'</p>';
-  av2.slice(0,3).forEach(function(m,i){var A=tnPair(m.a),B=tnPair(m.b);
-    h+=(i?'<hr style="border:0;border-top:1px dashed var(--line);margin:12px 0">':'')+'<div class="sides" style="margin-top:8px">'+[A,B].map(function(pr,k){return'<div class="side"><div class="names">'+tnNames(pr)+'</div><div class="streak">Team '+"AB".charAt(k)+(m.k==="f"?" · Final":"")+'</div></div>'}).join("")+'</div>'
-     +(idle.length?'<div class="pick2" style="margin-top:8px">'+idle.map(function(x){return'<button class="win" data-act="tnmove" data-v="'+m.id+'" data-k="'+esc(x)+'">Move to Court '+esc(x)+'</button>'}).join("")+'</div>':'<p class="hint" style="margin:8px 0 0">All courts are busy.</p>')});
-  return h+'</section>'}
-function tnLeft(){var T=TN(),h='<section class="court"><div class="chead"><b>🏆 Tournament</b><button class="ghost" data-act="tnclose">Back to normal queue</button></div>';
-  if(T.stage==="setup")h+=tnSetupBox();
-  else{var f=T.fmt;h+='<p class="streak" style="margin:6px 0 0">'+(T.stage==="play"?"Group stage · one game to "+f.t:T.stage==="final"?"Final · best of "+f.bo+", each game to "+f.ft:"Finished")+'</p>';
-    if(T.stage==="done"){var pod=tnPodium(),md=["🥇 1st place","🥈 2nd place","🥉 3rd place"];
-      h+='<div class="over">Final result<small>'+pod.map(function(id,i){return md[i]+": <b>"+esc(tnLbl(tnPair(id)))+"</b>"}).join("<br>")+'</small></div>'}
-    h+='<button class="ghost" style="margin-top:10px;color:var(--danger)" data-act="tnreset">Reset tournament</button><p class="hint" style="margin:8px 0 0">Live page for players: Menu, then Start live page.</p>'}
-  h+='</section>';
-  if(T.stage==="setup")return h;
-  var out=h+(T.stage==="done"?"":labels().map(tnCourt).join(""));
+function tnNext(){var T=TN(),busy={},nx=T.nx;T.ms.forEach(function(m){if((m.st==="a"||m.st==="r")&&m.c)busy[m.c]=1});var idle=labels().filter(function(x){return !busy[x]});
+  return'<section class="court"><div class="chead"><b>'+sic()+'Next up</b></div><div class="pick"><div class="tl">Team A</div>'+tnSelHtml('data-tnx="1"',0,nx)+'<div class="vs">versus</div><div class="tl">Team B</div>'+tnSelHtml('data-tnx="1"',1,nx)+'</div>'
+    +'<div class="pick2"><button class="wbtn" data-act="tnnxfill">'+ic("wand")+'Auto fill</button></div>'
+    +(idle.length?'<div class="pick2" style="margin-top:8px">'+idle.map(function(x){return'<button class="win" data-act="tnnxgo" data-k="'+esc(x)+'">Move to Court '+esc(x)+'</button>'}).join("")+'</div>':'<p class="hint" style="margin:8px 0 0">Waiting for a court to be free.</p>')+'</section>'}
+function tnLeft(){var T=TN(),pl=S.pl.filter(function(p){return !p.left&&!tnPairOf(p.id)}),h='<section class="court"><div class="chead"><b>🏆 Tournament</b><button class="ghost" data-act="tnclose">Back to normal queue</button></div>';
+  h+='<p class="hint" style="margin:6px 0">Make a pair here, or tap <b>🔒 Lock partner</b> on two players in the Waiting list. Then choose pair against pair for each court.</p>';
+  var opt=function(k){return'<select data-tmk="1" data-s="'+k+'" aria-label="'+(k?"Partner":"Player")+'"><option value="">'+(k?"Partner":"Player")+'</option>'+pl.filter(function(p){return p.id!==T.mk[1-k]}).map(function(p){return'<option value="'+p.id+'"'+(p.id===T.mk[k]?" selected":"")+'>'+esc(p.n)+' '+p.g+' '+SH[p.l]+'</option>'}).join("")+'</select>'};
+  h+='<div class="pick">'+opt(0)+'<div class="vs">and</div>'+opt(1)+'</div><button class="win" style="width:100%;margin-top:8px" data-act="tnmake">🔒 Lock as a pair</button>';
+  h+='<div class="hint" style="margin:12px 0 4px"><b>Pairs ('+T.pairs.length+')</b></div>';
+  if(!T.pairs.length)h+='<p class="hint" style="margin:0">No pairs yet.</p>';else h+=T.pairs.map(function(p){return'<div class="tnrow"><span><b>🔒 '+tnPairLbl(p)+'</b></span><button class="sm" data-act="tnunlock" data-v="'+p.id+'">Unlock</button></div>'}).join("");
+  h+='<button class="ghost" style="margin-top:10px;color:var(--danger)" data-act="tnreset">Reset tournament</button><p class="hint" style="margin:8px 0 0">Live page for players: Menu, then Start live page.</p></section>';
+  var out=h+labels().map(tnCourt).join("");
   T.ms.forEach(function(m){if(m.st==="r"&&!m.c)out+=tnRun(m,"Edit result")});
   return out+tnNext()}
-function tnRight(){var T=TN();if(T.stage==="setup")return"";var st=tnStand(),dn=T.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return b.dn-a.dn}),h='';
+function tnRight(){var T=TN();if(!T.pairs.length)return"";var st=tnStand(),dn=T.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return b.dn-a.dn}),h='';
   h+='<h2>'+ic("trophy")+'Leaderboard</h2><ol class="board">'+st.map(function(o,i){var l=i===0&&o.w>0;
-    return'<li class="'+(l?"lead":"")+'"><span class="nm">'+(l?'<div style="font-weight:800;font-size:13px">Leading</div>':"")+tnPairLbl(o.p)+'<div class="em">'+emo(o)+'</div><small>GP '+o.gp+' &middot; '+o.pt+' pts &middot; '+(o.pd>0?"+":"")+o.pd+'</small></span><span class="wl"><b>'+o.w+'</b> W &nbsp;<b>'+o.x+'</b> L</span></li>'}).join("")+'</ol><p class="hint">Win = 2 points, loss = 0. Ties: result between the tied pairs, then point difference.</p>';
-  if(dn.length)h+='<h2>'+ic("list")+'Results</h2>'+dn.map(function(m){var A=tnPair(m.a),B=tnPair(m.b);
-    return'<div class="tnrow"><span><b>'+(m.k==="f"?"Final: ":"")+esc(tnLbl(A))+'</b> vs <b>'+esc(tnLbl(B))+'</b><br><small>'+m.g.map(tnGs).join(", ")+' &middot; won by '+esc(tnLbl(tnPair(m.win)))+'</small></span><button class="sm" data-act="tnedit" data-v="'+m.id+'">Edit</button></div>'}).join("");
+    return'<li class="'+(l?"lead":"")+'"><span class="nm">'+(l?'<div style="font-weight:800;font-size:13px">Leading</div>':"")+tnPairLbl(o.p)+'<div class="em">'+emo(o)+'</div><small>GP '+o.gp+'</small></span><span class="wl"><b>'+o.w+'</b> W &nbsp;<b>'+o.x+'</b> L</span></li>'}).join("")+'</ol>';
+  if(dn.length)h+='<h2>'+ic("list")+'Results</h2>'+dn.map(function(m){var A=tnPair(m.a),B=tnPair(m.b);if(!A||!B)return"";
+    return'<div class="tnrow"><span><b>'+esc(tnLbl(A))+'</b> vs <b>'+esc(tnLbl(B))+'</b><br><small>'+esc(tnGs(m.g&&m.g[0]))+' &middot; won by '+esc(tnLbl(tnPair(m.win)))+'</small></span><button class="sm" data-act="tnedit" data-v="'+m.id+'">Edit</button></div>'}).join("");
   return h}
+function tnNewM(a,b,c,st){return{id:uid(),a:a,b:b,k:"g",st:st,c:c,t0:st==="r"?Date.now():0,g:[],sc:null,win:"",dn:0}}
+function tnCourtBusy(T,c){return T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===c})}
 function tnAct(act,t){
   if(act==="tnclose"){S.tnv=false;save();render();return}
   if(act==="tnopen"){if(!PRO){needPro("Tournament mode");return}S.tnv=true;save();render();window.scrollTo(0,0);return}
-  if((act==="tnlock"||act==="tnunlock")&&!PRO){needPro("Locking partners");return}
+  if((act==="tnlock"||act==="tnunlock"||act==="tnmake")&&!PRO){needPro("Locking partners");return}
   var T=TN(),v=t.dataset.v,m=T.ms.filter(function(x){return x.id===v})[0];
-  if(act==="tnf"){if(T.stage!=="setup")return;var k=t.dataset.k;snap();T.fmt[k]=+v}
-  else if(act==="tnlock"){if(T.stage!=="setup"||tnPairOf(v))return;if(!T.sel)T.sel=v;else if(T.sel===v)T.sel="";else{var a=P(T.sel),b=P(v);if(a&&b){snap();T.pairs.push({id:uid(),a:a.id,b:b.id,an:a.n,bn:b.n})}T.sel=""}}
-  else if(act==="tnunlock"){if(T.stage!=="setup")return;snap();T.pairs=T.pairs.filter(function(p){return p.id!==v});T.sel=""}
-  else if(act==="tnstart"){if(T.pairs.length<3){toast("You need at least 3 pairs.");return}snap();T.ms=tnRR(T.pairs.map(function(p){return p.id})).map(function(x,i){return{id:"m"+i,a:x[0],b:x[1],k:"g",st:"w",c:"",t0:0,g:[],sc:null,win:"",dn:0}});T.stage="play";T.sel="";T.seq=0}
-  else if(act==="tnfill"){var fl=t.dataset.k,fm=tnAvail()[0];if(!fm){toast("No match is waiting.");return}T.pick=T.pick||{};T.pick[fl]=[fm.a,fm.b]}
-  else if(act==="tnpickgo"){var gl=t.dataset.k,pk=(T.pick&&T.pick[gl])||["",""];if(!pk[0]||!pk[1]){toast("Choose a pair for Team A and Team B first.");return}
-    var gm=T.ms.filter(function(x){return(x.a===pk[0]&&x.b===pk[1])||(x.a===pk[1]&&x.b===pk[0])})[0],gb=tnBusy();
-    if(!gm){toast("These two pairs do not play each other now.");return}
-    if(gm.st==="d"){toast("These two pairs already played. Use Edit under Results to change that result.");return}
-    if(gm.st!=="w"||gb[gm.a]||gb[gm.b]){toast("One of these pairs is already on a court.");return}
-    if(T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===gl})){toast("That court is busy.");return}
-    snap();if(gm.a!==pk[0]){gm.b=gm.a;gm.a=pk[0]}gm.st="r";gm.c=gl;gm.t0=Date.now();gm.sc=null;delete T.pick[gl]}
-  else if(act==="tnmove"){var cn=t.dataset.k,bz=tnBusy();if(!m||m.st!=="w"||bz[m.a]||bz[m.b])return;if(T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===cn})){toast("That court is busy.");return}snap();m.st="a";m.c=cn;if(T.pick)delete T.pick[cn]}
+  if(act==="tnlock"){if(tnPairOf(v))return;if(!T.sel)T.sel=v;else if(T.sel===v)T.sel="";else{var a=P(T.sel),b=P(v);if(a&&b){snap();T.pairs.push({id:uid(),a:a.id,b:b.id,an:a.n,bn:b.n})}T.sel=""}}
+  else if(act==="tnmake"){var x0=P(T.mk[0]),x1=P(T.mk[1]);if(!x0||!x1||x0.id===x1.id){toast("Choose two different players.");return}snap();T.pairs.push({id:uid(),a:x0.id,b:x1.id,an:x0.n,bn:x1.n});T.mk=["",""]}
+  else if(act==="tnunlock"){if(T.ms.some(function(x){return x.a===v||x.b===v})){toast("This pair has games. Reset the tournament to change pairs.");return}snap();T.pairs=T.pairs.filter(function(p){return p.id!==v});T.sel=""}
+  else if(act==="tnfill"){var fl=t.dataset.k,ex=[T.nx[0],T.nx[1]];Object.keys(T.pick).forEach(function(k){if(k!==fl)ex=ex.concat(T.pick[k])});var au=tnAuto(ex);if(!au){toast("Not enough pairs waiting.");return}T.pick[fl]=au}
+  else if(act==="tnnxfill"){var ex2=[];Object.keys(T.pick).forEach(function(k){ex2=ex2.concat(T.pick[k])});var au2=tnAuto(ex2);if(!au2){toast("Not enough pairs waiting.");return}T.nx=au2}
+  else if(act==="tnpickgo"||act==="tnnxgo"){var go=act==="tnpickgo",lb=t.dataset.k,pk=go?(T.pick[lb]||["",""]):T.nx,bz=tnBusy();
+    if(!pk[0]||!pk[1]){toast("Choose a pair for Team A and Team B first.");return}
+    if(bz[pk[0]]||bz[pk[1]]){toast("One of these pairs is already on a court.");return}
+    if(tnCourtBusy(T,lb)){toast("That court is busy.");return}
+    snap();T.ms.push(tnNewM(pk[0],pk[1],lb,go?"r":"a"));if(go)delete T.pick[lb];else T.nx=["",""]}
   else if(act==="tnstartg"){if(!m||m.st!=="a")return;snap();m.st="r";m.t0=Date.now();m.sc=null}
-  else if(act==="tnback"){if(!m||(m.st!=="a"&&m.st!=="r"))return;snap();if(m.old){m.g=m.old.g;m.win=m.old.win;m.dn=m.old.dn;m.st="d";m.old=null;m.sc=null;tnAdvance()}else{m.st="w";m.c="";m.t0=0;m.g=[];m.sc=null}}
+  else if(act==="tnback"){if(!m||(m.st!=="a"&&m.st!=="r"))return;snap();if(m.old){m.g=m.old.g;m.win=m.old.win;m.dn=m.old.dn;m.st="d";m.old=null;m.sc=null}else T.ms=T.ms.filter(function(x){return x!==m})}
   else if(act==="tnwin"){if(!m||m.st!=="r")return;var s0=+t.dataset.s,sc=m.sc||["",""],has=String(sc[0]).trim()!==""&&String(sc[1]).trim()!=="";
-    snap();m.g=m.g||[];m.g.push([has?+sc[0]:null,has?+sc[1]:null,s0]);m.sc=null;var w=tnWins(m),need=tnNeed(m);
-    if(w[0]>=need||w[1]>=need){m.win=w[0]>w[1]?m.a:m.b;m.st="d";m.c="";m.old=null;m.dn=++T.seq;tnAdvance()}}
-  else if(act==="tnedit"){if(!m||m.st!=="d")return;if(m.k==="g"&&T.ms.some(function(x){return x.k==="f"&&x.st!=="w"})){toast("The final has started. Cancel or finish the final first.");return}
-    snap();m.old={g:m.g.slice(),win:m.win,dn:m.dn};var lg=m.g[m.g.length-1];m.g=m.g.slice(0,-1);m.sc=lg[0]==null?["",""]:[String(lg[0]),String(lg[1])];m.st="r";m.win="";m.c="";tnAdvance()}
-  else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();S.tn=tnNew();T=S.tn}
+    snap();m.g=[[has?+sc[0]:null,has?+sc[1]:null]];m.sc=null;m.win=s0===0?m.a:m.b;m.st="d";m.c="";m.old=null;m.dn=++T.seq}
+  else if(act==="tnedit"){if(!m||m.st!=="d")return;snap();m.old={g:m.g,win:m.win,dn:m.dn};var lg=m.g&&m.g[0];m.sc=lg&&lg[0]!=null?[String(lg[0]),String(lg[1])]:["",""];m.g=[];m.st="r";m.win="";m.c=""}
+  else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();S.tn=tnNew()}
   var sy=window.scrollY;save();render();window.scrollTo(0,sy)}
-document.addEventListener("change",function(e){var el=e.target;if(!el||!el.dataset||el.dataset.tpick==null)return;var T=TN(),lb=el.dataset.tpick;T.pick=T.pick||{};T.pick[lb]=T.pick[lb]||["",""];T.pick[lb][+el.dataset.s]=el.value;save();var sy=window.scrollY;render();window.scrollTo(0,sy)});
+document.addEventListener("change",function(e){var el=e.target;if(!el||!el.dataset)return;var T,k=+el.dataset.s;
+  if(el.dataset.tpick!=null){T=TN();var lb=el.dataset.tpick;T.pick[lb]=T.pick[lb]||["",""];T.pick[lb][k]=el.value}
+  else if(el.dataset.tnx!=null){T=TN();T.nx[k]=el.value}
+  else if(el.dataset.tmk!=null){T=TN();T.mk[k]=el.value}
+  else return;
+  save();var sy=window.scrollY;render();window.scrollTo(0,sy)});
 document.addEventListener("input",function(e){var el=e.target;if(!el||!el.dataset||!el.dataset.tsc)return;var m=TN().ms.filter(function(x){return x.id===el.dataset.tsc})[0];if(!m)return;
   m.sc=m.sc||["",""];m.sc[+el.dataset.s]=el.value;save();var mg=document.getElementById("tmg"+m.id);if(mg)mg.textContent=marg(m.sc)});
 
@@ -863,7 +825,7 @@ function proHtml(){
 }
 function needPro(what){toast(what+" is a Pro feature. Open Menu to enter your Pro code.");return false}
 var FREE_F=[["Up to "+FREE_COURTS+" courts","Choose your own court numbers, for example 1, 3, 5."],["Mixed Doubles (XD), Women\u2019s Doubles (WD) and Men\u2019s Doubles (MD)","Each court has its own category. Mixed needs one woman and one man on each team."],["Add several players at once","Paste a list with a gender and level after each name, for example Jack M A or Maria F I. Preview it, fix any row with a tap, then add all."],["Badminton icons and winner pop-up","Choose Badminton or Pickleball at the top, locked while a game is in progress. The matching icon shows next to the app name and on every court card. A friendly empty list and a trophy pop-up when a game ends. The pop-up can be turned off in Menu."],["Left early button","Mark a player who went home. They stay in the ranking and payments with a full share, but are skipped by Auto fill and the name lists. A Back button returns them."],["Next-up team","Line up one team to play next, then move it onto any court that opens."],["Custom category","Pick any four names yourself with no gender or level rules. Auto fill takes the first four in the queue."],["Add players with a gender icon and skill level","Beginner/Novice, Intermediate, Advance or Open."],["Numbered waiting list","Sort A to Z, fewest games, level or queue order. Each row shows GP, level, wins and losses."],["Rest, back and remove buttons","Remove a player, or clear the whole waiting list with a two-tap safety check."],["Auto fill and manual picking for every court","Players who have not played yet go first, and the rotation stays fair."],["Rotation rules","Rotate partners every game, or let winners stay for 2 or 3 games."],["Court timer, scores and winning margin","Start a game, enter the winning score and see the margin and minutes played."],["Leaderboard","Top winners with a muscle icon for each win and a crying icon for each loss."],["Costs with a fixed amount per player","Set your currency symbol and see what each player pays."],["Game date, start and end time","Show the time when the session is over, then End game and Reopen games."],["Duplicate name warning","The same player name cannot be added twice. You get a warning instead."],["\u201cLeaving after this game\u201d button","Tap a player on a court and they rest automatically when the game ends."],["Share session summary","Copy a ready message with the date, games, top winners and what each player pays."],["Rematch button","Replay the same four players on the same court in one tap."],["Game history","See every finished game with its score, margin and time."],["Language","English, Arabic, Filipino and Hindi."],["Bigger text option","Normal, large or extra large."],["Quick tour and Install on home screen"],["Export game data (CSV)"],["Undo your last action"],["Works offline and saves on your device","Designed for phone, tablet and laptop, with a dark mode."],["Backup and restore","Save your players, payments and history to a file, and restore it on this or another phone."],["Works offline","After the first visit, the app opens without internet when you use it from its web link."]];
-var PRO_F=[["Everything in the Free version"],["Free trial for 2 uses","Try everything below for 2 uses. Games on the same day count as 1 use, and the next different date counts as use 2. Once per device."],["Up to 12 courts"],["Colour themes","Choose Court green or Night colours."],["Several next-up teams","Line up to 4 teams to play next."],["Two payment PDFs","Player copy hides the totals. Queue Master (QM) copy shows everything, with each court category and player level."],["My regular players list","Save your regulars once and add them all in one tap."],["Sound and vibration when the session end time is reached","Set the end time in Menu."],["Smart auto fill","Avoids repeat partners and opponents and balances teams by skill."],["Play next button","Move a waiting player to the front of the queue."],["Payment reminder messages","One tap writes a message for every player who has not paid."],["Player receipts","Copy a receipt for any player."],["Monthly report","Games, money collected, expenses and balance for each month."],["Season statistics","Games, wins and losses for every player across all sessions."],["Level-specific categories","Men\u2019s, Women\u2019s and Mixed (XD) Doubles: Intermediate & Advance, and Advanced Only."],["Tournament mode","Lock two players as a fixed pair. Play a group stage with scores, then a final. Standings and the final result show on the live page too."],["Live page for players","Share one link, for example in your group chat. Players see who is playing now, who is next and the ranking, live, with no app to install. Only names and results are shared, never payments. Your phone needs internet."],["Games played ranking","Every player\u2019s games, wins and losses with muscle and crying icons."],["Ranking page in the Player PDF","The Player copy payment PDF ends with the Games Played Ranking, with trophy and lose icons and the game icon (shuttlecock or pickleball)."],["Split total cost","Enter court rent and shuttlecock and divide the total between all players."],["Payments module","Payment overview, PAID, UNPAID, PARTIAL and EXEMPTED buttons for each player, and recording of cash, bank transfer and online payments."],["Transaction history","Every payment is logged, kept after Reopen games, and ready to export."],["Payment reports in PDF"],["Optional PIN lock for payments"],["\u201cNetPlay Queue Pro\u201d title","Shown once your Pro code is active."]];
+var PRO_F=[["Everything in the Free version"],["Free trial for 2 uses","Try everything below for 2 uses. Games on the same day count as 1 use, and the next different date counts as use 2. Once per device."],["Up to 12 courts"],["Colour themes","Choose Court green or Night colours."],["Several next-up teams","Line up to 4 teams to play next."],["Two payment PDFs","Player copy hides the totals. Queue Master (QM) copy shows everything, with each court category and player level."],["My regular players list","Save your regulars once and add them all in one tap."],["Sound and vibration when the session end time is reached","Set the end time in Menu."],["Smart auto fill","Avoids repeat partners and opponents and balances teams by skill."],["Play next button","Move a waiting player to the front of the queue."],["Payment reminder messages","One tap writes a message for every player who has not paid."],["Player receipts","Copy a receipt for any player."],["Monthly report","Games, money collected, expenses and balance for each month."],["Season statistics","Games, wins and losses for every player across all sessions."],["Level-specific categories","Men\u2019s, Women\u2019s and Mixed (XD) Doubles: Intermediate & Advance, and Advanced Only."],["Tournament mode","Lock two players as a fixed pair, choose pair against pair on every court, and follow a pair leaderboard. Courts, next match and standings show on the live page too."],["Live page for players","Share one link, for example in your group chat. Players see who is playing now, who is next and the ranking, live, with no app to install. Only names and results are shared, never payments. Your phone needs internet."],["Games played ranking","Every player\u2019s games, wins and losses with muscle and crying icons."],["Ranking page in the Player PDF","The Player copy payment PDF ends with the Games Played Ranking, with trophy and lose icons and the game icon (shuttlecock or pickleball)."],["Split total cost","Enter court rent and shuttlecock and divide the total between all players."],["Payments module","Payment overview, PAID, UNPAID, PARTIAL and EXEMPTED buttons for each player, and recording of cash, bank transfer and online payments."],["Transaction history","Every payment is logged, kept after Reopen games, and ready to export."],["Payment reports in PDF"],["Optional PIN lock for payments"],["\u201cNetPlay Queue Pro\u201d title","Shown once your Pro code is active."]];
 function listHtml(a){return"<ol>"+a.map(function(x){return"<li>"+esc(x[0])+(x[1]?"<small>"+esc(x[1])+"</small>":"")+"</li>"}).join("")+"</ol>"}
 function openPage(k){
   var el=document.getElementById("fpage");if(!el)return;
