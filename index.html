@@ -580,14 +580,15 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=125,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=126,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
   return'<div class="over" id="updnote" role="status"><b><span>A new version of NetPlay Queue is ready.</span></b><small><span>Back up first, then tap Update. Your players and payments stay on this phone.</span><span style="display:block;margin-top:6px"><button class="ghost" style="padding:4px 12px" data-act="updbk">Back up now</button> <button class="btn" style="padding:4px 14px" data-act="updgo">Update</button> <button class="ghost" style="padding:4px 12px" data-act="updlater">Later</button></span></small></div>'}
 /* Live page for players (Firebase Realtime Database over REST) */
 var LV_CFG={apiKey:"AIzaSyDHNwNpiiGKFuhTha9W09hBsijeFpgVdb8",db:"https://netplayqueue-e959e-default-rtdb.asia-southeast1.firebasedatabase.app"};
-var LIVE=(function(){try{var o=JSON.parse(localStorage.getItem("np-live")||"null");return o&&typeof o==="object"?o:{}}catch(e){return{}}})(),LIVET=0,LIVEL="",LIVEM="",LIVEX="";
+var LIVE=(function(){try{var o=JSON.parse(localStorage.getItem("np-live")||"null");return o&&typeof o==="object"?o:{}}catch(e){return{}}})(),LIVET=0,LIVEL="",LIVEM="",LIVEX="",LIVED="";
+function liveHint(d){d=String(d||"");if(/CONFIGURATION_NOT_FOUND|ADMIN_ONLY_OPERATION|OPERATION_NOT_ALLOWED/.test(d))return"Firebase says: "+d+". Turn on Anonymous sign-in: Firebase, Build, Authentication, Sign-in method, Anonymous, Enable, Save.";if(/API key|API_KEY|referer|blocked/i.test(d))return"Firebase says: "+d+". Check the API key restrictions in Google Cloud.";if(/^40[13]/.test(d)||/Permission denied/i.test(d))return"Firebase says: "+d+". Check that the database Rules are published.";return d?"Firebase says: "+d:""}
 function liveOk(){return !!(LV_CFG.apiKey&&LV_CFG.db)}
 function liveStore(){try{localStorage.setItem("np-live",JSON.stringify(LIVE))}catch(e){}}
 async function liveAuth(){
@@ -598,7 +599,7 @@ async function liveAuth(){
     if(r.ok){j=await r.json();LIVE.idt=j.id_token;LIVE.rt=j.refresh_token||LIVE.rt;LIVE.uid=j.user_id||LIVE.uid;LIVE.exp=Date.now()+(+j.expires_in||3600)*1000;liveStore();return LIVE.idt}
     LIVE.rt="";LIVE.idt=""}
   r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+encodeURIComponent(LV_CFG.apiKey),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({returnSecureToken:true})});
-  if(!r.ok)throw new Error("auth "+r.status);
+  if(!r.ok){var et="";try{var ej=await r.json();et=(ej.error&&ej.error.message)||""}catch(x){}var er=new Error("auth");er.detail=r.status+" "+et;throw er}
   j=await r.json();LIVE.idt=j.idToken;LIVE.rt=j.refreshToken;LIVE.uid=j.localId;LIVE.exp=Date.now()+(+j.expiresIn||3600)*1000;
   if(LIVE.on&&LIVE.code&&LIVE.cuid&&LIVE.cuid!==LIVE.uid){LIVE.on=false;LIVE.code=""}
   liveStore();return LIVE.idt}
@@ -622,9 +623,9 @@ async function livePush(force){
     for(var k=0;k<2;k++){
       var tok=await liveAuth();snap.o=LIVE.uid;snap.t={".sv":"timestamp"};var nowm=Date.now();snap.courts=snap.courts.map(function(c){return{n:c.n,cat:c.cat,a:c.a,b:c.b,el:c.t0?Math.max(0,nowm-c.t0):0}});
       var r=await fetch(LV_CFG.db.replace(/\/+$/,"")+"/s/"+LIVE.code+".json?auth="+encodeURIComponent(tok),{method:"PUT",body:JSON.stringify(snap)});
-      if(r.ok){LIVEH=h;LIVET=Date.now();LIVEL=tmStr(Date.now()).slice(0,5);LIVEX="";break}
+      if(r.ok){LIVEH=h;LIVET=Date.now();LIVEL=tmStr(Date.now()).slice(0,5);LIVEX="";LIVED="";break}
       if(r.status===401&&k===0){LIVE.idt="";LIVE.exp=0;continue}
-      LIVEX=r.status===401||r.status===403?"This live page belongs to another device. Stop it and start a new one.":"Could not update the live page. Will try again.";break}
+      var bt="";try{bt=(await r.text()).slice(0,120)}catch(x){}LIVED=liveHint(r.status+" "+bt);LIVEX=r.status===401||r.status===403?"This live page belongs to another device. Stop it and start a new one.":"Could not update the live page. Will try again.";break}
   }catch(e){LIVEX="No internet. The live page will update when you are online again."}
   LIVEBUSY=false;liveNote()}
 function liveNote(){var e=document.getElementById("livemsg");if(e)e.textContent=LIVEX||(LIVEL?"Live. Last update "+LIVEL:"")}
@@ -632,8 +633,8 @@ async function liveStart(){
   if(!PRO){needPro("The live page");return}
   if(!liveOk())return;
   if(navigator.onLine===false){LIVEM="You are offline. Connect to the internet, then try again.";render();return}
-  try{await liveAuth()}catch(e){LIVEM="Could not start the live page. Check your internet and try again.";render();return}
-  LIVE.code=liveCode();LIVE.cuid=LIVE.uid;LIVE.on=true;liveStore();LIVEM="";LIVEH="";render();await livePush(true);render()}
+  try{await liveAuth()}catch(e){LIVEM="Could not start the live page. Check your internet and try again.";LIVED=liveHint(e&&e.detail);render();return}
+  LIVE.code=liveCode();LIVE.cuid=LIVE.uid;LIVE.on=true;liveStore();LIVEM="";LIVED="";LIVEH="";render();await livePush(true);render()}
 async function liveStop(){
   var code=LIVE.code;LIVE.on=false;LIVE.code="";liveStore();LIVEL="";LIVEX="";LIVEM="The live page was stopped.";render();
   if(!code||!liveOk())return;
@@ -641,8 +642,8 @@ async function liveStop(){
 function liveHtml(){
   if(!liveOk())return"";
   if(!PRO)return'<div class="lockbox" id="livesec"><b>Live page for players (Pro)</b><p class="hint" style="margin:0 0 8px">Players open one link and see who is playing now, who is next and the ranking, live.</p><button class="ghost" data-act="gopro">Unlock with a Pro code</button></div>';
-  if(!LIVE.on||!LIVE.code)return'<div class="lockbox" id="livesec"><b>Live page for players</b><p class="hint" style="margin:0 0 8px">Players open one link and see who is playing now, who is next and the ranking, live. Only player names and results are shared, never payments. Your phone needs internet. Tap Stop to remove the page.</p><button class="btn" data-act="livego">Start live page</button><p class="hint" id="livemsg" style="margin:6px 0 0">'+esc(LIVEM)+'</p></div>';
-  return'<div class="lockbox" id="livesec"><b>Live page is on</b><p class="hint" style="margin:0 0 8px">Send this link to your players, for example in your group chat.</p><input type="text" readonly id="liveurl" value="'+esc(liveUrl())+'" aria-label="Live page link" style="width:100%"><div class="pick2" style="margin-top:8px"><button class="ghost" data-act="livecopy">Copy link</button><button class="ghost" data-act="liveshare">Share</button></div><button class="ghost" style="margin-top:8px" data-act="livestop">Stop live page</button><p class="hint" id="livemsg" style="margin:6px 0 0">'+esc(LIVEX||(LIVEL?"Live. Last update "+LIVEL:""))+'</p></div>'}
+  if(!LIVE.on||!LIVE.code)return'<div class="lockbox" id="livesec"><b>Live page for players</b><p class="hint" style="margin:0 0 8px">Players open one link and see who is playing now, who is next and the ranking, live. Only player names and results are shared, never payments. Your phone needs internet. Tap Stop to remove the page.</p><button class="btn" data-act="livego">Start live page</button><p class="hint" id="livemsg" style="margin:6px 0 0">'+esc(LIVEM)+'</p>'+(LIVED?'<p class="hint" style="margin:4px 0 0"><b>'+esc(LIVED)+'</b></p>':"")+'</div>';
+  return'<div class="lockbox" id="livesec"><b>Live page is on</b><p class="hint" style="margin:0 0 8px">Send this link to your players, for example in your group chat.</p><input type="text" readonly id="liveurl" value="'+esc(liveUrl())+'" aria-label="Live page link" style="width:100%"><div class="pick2" style="margin-top:8px"><button class="ghost" data-act="livecopy">Copy link</button><button class="ghost" data-act="liveshare">Share</button></div><button class="ghost" style="margin-top:8px" data-act="livestop">Stop live page</button><p class="hint" id="livemsg" style="margin:6px 0 0">'+esc(LIVEX||(LIVEL?"Live. Last update "+LIVEL:""))+'</p>'+(LIVED?'<p class="hint" style="margin:4px 0 0"><b>'+esc(LIVED)+'</b></p>':"")+'</div>'}
 setInterval(function(){if(LIVE.on&&!document.hidden)livePush(false)},6e4);
 window.addEventListener("online",function(){if(LIVE.on)livePush(true)});
 function updGo(){ if(!UPDB&&!UPDW){UPDW=true;toast("Tap Back up now first to save your data. Tap Update again to continue without a backup.");return}
