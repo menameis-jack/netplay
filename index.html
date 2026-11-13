@@ -587,7 +587,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=140,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=142,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -705,7 +705,7 @@ function qrSvg(txt){
   return'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+sz+" "+sz+'" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="'+sz+'" height="'+sz+'" fill="#fff"/><path d="'+d2+'" fill="#000"/></svg>'}
 
 /* ---- Tournament: locked pairs, group stage, final ---- */
-function tnNew(){return{stage:"setup",fmt:{t:30,ft:30,bo:3,fin:1},pairs:[],ms:[],sel:"",seq:0}}
+function tnNew(){return{stage:"setup",fmt:{t:30,ft:30,bo:3,fin:0},pairs:[],ms:[],sel:"",seq:0}}
 function TN(){if(!S.tn||typeof S.tn!=="object"||!S.tn.fmt)S.tn=tnNew();return S.tn}
 function tnLockBtn(p){var T=S.tn;if(T&&T.stage&&T.stage!=="setup")return"";var pr=T&&T.pairs?T.pairs.filter(function(x){return x.a===p.id||x.b===p.id})[0]:null;
   if(pr)return'<button class="sm" data-act="tnunlock" data-v="'+pr.id+'">\ud83d\udd12 Unlock</button>';
@@ -744,8 +744,7 @@ function tnAvail(){var T=TN(),b=tnBusy(),last={},idx=0;
 function tnAdvance(){var T=TN(),g=T.ms.filter(function(m){return m.k==="g"}),f=T.ms.filter(function(m){return m.k==="f"})[0];
   if(T.stage==="setup")return;
   if(g.some(function(m){return m.st!=="d"})){if(f&&f.st==="w")T.ms=T.ms.filter(function(m){return m.k!=="f"});T.stage="play";return}
-  if(!+T.fmt.fin){T.ms=T.ms.filter(function(m){return m.k!=="f"});T.stage="done";return}
-  if(!f){var s=tnStand();T.ms.push({id:"f1",a:s[0].p.id,b:s[1].p.id,k:"f",st:"w",c:"",t0:0,g:[],win:"",dn:0});T.stage="final";return}
+  if(!f){T.stage="done";return}
   T.stage=f.st==="d"?"done":"final"}
 function tnPodium(){var T=TN(),s=tnStand(),f=T.ms.filter(function(m){return m.k==="f"&&m.st==="d"})[0],r=[];
   if(f){var lose=f.win===f.a?f.b:f.a;r=[f.win,lose];s.forEach(function(o){if(r.length<3&&r.indexOf(o.p.id)<0)r.push(o.p.id)})}
@@ -770,8 +769,6 @@ function tnSeg(k,arr,cur){return'<div class="seg" role="group">'+arr.map(functio
 function tnSetupBox(){var T=TN(),f=T.fmt,n=T.pairs.length,mt=n*(n-1)/2,h='';
   h+='<p class="hint" style="margin:6px 0">Make pairs: tap <b>🔒 Lock partner</b> on one player in the Waiting list below, then <b>🔒 Lock with ...</b> on the partner.</p>';
   h+='<div class="hint" style="margin:8px 0 4px">Group stage: one game to</div>'+tnSeg("t",[[11,"11"],[15,"15"],[21,"21"],[30,"30"]],f.t)
-   +'<div class="hint" style="margin:10px 0 4px">Play a final between the top two pairs</div>'+tnSeg("fin",[[1,"Yes"],[0,"No"]],f.fin)
-   +(+f.fin?'<div class="hint" style="margin:10px 0 4px">Final: best of</div>'+tnSeg("bo",[[1,"1 game"],[3,"3 games"]],f.bo)+'<div class="hint" style="margin:10px 0 4px">Final: each game to</div>'+tnSeg("ft",[[11,"11"],[15,"15"],[21,"21"],[30,"30"]],f.ft):"")
    +'<p class="hint" style="margin:10px 0 0">You type the score and tap the winning team. The winner is the team you tap.</p>';
   h+='<div class="hint" style="margin:12px 0 4px"><b>Pairs ('+n+')</b></div>';
   if(!n)h+='<p class="hint" style="margin:0">No pairs yet.</p>';else h+=T.pairs.map(function(p){return'<div class="tnrow"><span><b>🔒 '+tnPairLbl(p)+'</b></span><button class="sm" data-act="tnunlock" data-v="'+p.id+'">Unlock</button></div>'}).join("");
@@ -810,7 +807,7 @@ function tnLeft(){var T=TN(),h='<section class="court"><div class="chead"><b>�
     h+='<button class="ghost" style="margin-top:10px;color:var(--danger)" data-act="tnreset">Reset tournament</button><p class="hint" style="margin:8px 0 0">Live page for players: Menu, then Start live page.</p>'}
   h+='</section>';
   if(T.stage==="setup")return h;
-  var out=h+labels().map(tnCourt).join("");
+  var out=h+(T.stage==="done"?"":labels().map(tnCourt).join(""));
   T.ms.forEach(function(m){if(m.st==="r"&&!m.c)out+=tnRun(m,"Edit result")});
   return out+tnNext()}
 function tnRight(){var T=TN();if(T.stage==="setup")return"";var st=tnStand(),dn=T.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return b.dn-a.dn}),h='';
