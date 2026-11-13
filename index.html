@@ -580,7 +580,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=129,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=130,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -1060,7 +1060,7 @@ function selHtml(c,ci,k){
   var av=S.q.map(P).filter(function(p){return !p.rest}).concat(c.keep.map(P)).filter(function(p,i,a){return p&&tk.indexOf(p.id)<0&&a.indexOf(p)===i}).sort(function(a,b){return(S.ws||"az")==="queue"?0:byName(a,b)});
   if(cur&&P(cur)&&!av.some(function(p){return p.id===cur}))av.push(P(cur));
   return'<select data-f="sel" data-c="'+ci+'" data-s="'+k+'" aria-label="'+SL[k]+'"><option value="">'+SL[k]+'</option>'+av.map(function(p){
-    return'<option value="'+p.id+'"'+(p.id===cur?" selected":"")+'>'+esc(p.n)+' ('+SH[p.l]+" "+p.g+')</option>'}).join("")+'</select>';
+    return'<option value="'+p.id+'"'+(p.id===cur?" selected":"")+'>'+esc(p.n)+' '+p.g+' '+(p.l===3?"Open":SH[p.l])+'</option>'}).join("")+'</select>';
 }
 function courtHtml(c,ci){
   var cn=CATS.filter(function(x){return x[0]===c.cat})[0][1],h;
