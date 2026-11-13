@@ -587,7 +587,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=135,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=136,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -708,6 +708,11 @@ function qrSvg(txt){
 var TNO=false,TNDIRTY=false;
 function tnNew(){return{stage:"setup",fmt:{t:30,ft:30,bo:3,fin:1},pairs:[],ms:[],sel:"",seq:0}}
 function TN(){if(!S.tn||typeof S.tn!=="object"||!S.tn.fmt)S.tn=tnNew();return S.tn}
+function tnLockBtn(p){var T=S.tn;if(T&&T.stage&&T.stage!=="setup")return"";var pr=T&&T.pairs?T.pairs.filter(function(x){return x.a===p.id||x.b===p.id})[0]:null;
+  if(pr)return'<button class="sm" data-act="tnunlock" data-v="'+pr.id+'">\ud83d\udd12 Unlock</button>';
+  var sel=T&&T.sel?P(T.sel):null;
+  if(sel&&sel.id===p.id)return'<button class="sm" data-act="tnlock" data-v="'+p.id+'">Cancel</button>';
+  return'<button class="sm" data-act="tnlock" data-v="'+p.id+'">\ud83d\udd12 '+(sel?"Lock with "+esc(sel.n):"Lock partner")+'</button>'}
 function tnLk(p){try{return S.tn&&S.tn.pairs&&S.tn.pairs.some(function(x){return x.a===p.id||x.b===p.id})?" \ud83d\udd12":""}catch(e){return""}}
 function tnPair(id){return TN().pairs.filter(function(p){return p.id===id})[0]}
 function tnLbl(p){return p?p.an+" / "+p.bn:""}
@@ -818,7 +823,7 @@ function tnHtml(){var T=TN(),h='<h2>Tournament</h2>';
   return h}
 function tnRender(){var el=document.getElementById("fpage");if(!el||el.hidden||!TNO)return;var sy=el.scrollTop;
   el.innerHTML='<div class="in"><div class="top"><button class="ghost" data-act="pageback">&larr; Back</button></div>'+tnHtml()+'</div>';applyLang();el.scrollTop=sy}
-function tnAct(act,t){var T=TN(),v=t.dataset.v,m=T.ms.filter(function(x){return x.id===v})[0],i;
+function tnAct(act,t){if((act==="tnlock"||act==="tnunlock")&&!PRO){needPro("Locking partners");return}var T=TN(),v=t.dataset.v,m=T.ms.filter(function(x){return x.id===v})[0],i;
   if(act==="tnopen"){if(!PRO){needPro("Tournament mode");return}TNO=true;openPage("tn");return}
   if(act==="tnf"){if(T.stage!=="setup")return;var k=t.dataset.k;snap();T.fmt[k]=+v}
   else if(act==="tnlock"){if(T.stage!=="setup"||tnPairOf(v))return;if(!T.sel)T.sel=v;else if(T.sel===v)T.sel="";else{var a=P(T.sel),b=P(v);if(a&&b){snap();T.pairs.push({id:uid(),a:a.id,b:b.id,an:a.n,bn:b.n})}T.sel=""}}
@@ -830,7 +835,7 @@ function tnAct(act,t){var T=TN(),v=t.dataset.v,m=T.ms.filter(function(x){return 
   else if(act==="tnscore"){if(!m)return;var ins=document.querySelectorAll('[data-sc="'+m.id+'"]'),vals=[];for(i=0;i<ins.length;i++)vals.push(ins[i].value);snap();var er=tnSave(m,vals);if(er){UNDO.pop();toast(er);return}tnAdvance()}
   else if(act==="tnedit"){if(!m||m.st!=="d")return;if(m.k==="g"&&T.ms.some(function(x){return x.k==="f"&&x.st!=="w"})){toast("The final has started. Cancel or finish the final first.");return}snap();m.old={g:m.g,win:m.win,dn:m.dn};m.st="r";m.win="";m.c="";tnAdvance()}
   else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();S.tn=tnNew();T=S.tn}
-  TNDIRTY=true;save();tnRender()}
+  TNDIRTY=true;save();tnRender();if(!TNO)render()}
 
 function tnRefresh(){var a=document.activeElement;if(a&&a.tagName==="INPUT"&&a.closest&&a.closest("#fpage"))return;tnRender()}
 var _tnr=render;render=function(){_tnr.apply(this,arguments);if(TNO)tnRefresh()};
@@ -1268,7 +1273,7 @@ function render(){
     return'<li class="wi'+(p.rest?" rest":"")+'"><div class="l1"><span class="pos">'+(ix+1)+'.</span>'+av(p)+esc(p.n)+tnLk(p)+'</div>'
       +'<div class="l2">GP '+(p.p||0)+' &middot; '+LV[p.l]+(p.nx?' &middot; Next up':'')+'</div>'
       +'<div class="l3">\ud83c\udfc6 '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div>'
-      +'<div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp">'+(PRO?'<button class="sm" data-act="nx" data-v="'+p.id+'" aria-pressed="'+(!!p.nx)+'">'+(p.nx?"Next up":"Play next")+'</button>':'')+'<button class="sm" data-act="rest" data-v="'+p.id+'">'+(p.rest?"Back":"Rest")+'</button><button class="sm" data-act="left" data-v="'+p.id+'">Left early</button><button class="x" aria-label="Remove player" data-act="del" data-v="'+p.id+'"'+(ARM.k==="del"+p.id?' style="font-size:14px;font-weight:800"':'')+'>'+(ARM.k==="del"+p.id?"Remove?":"\u00d7")+'</button></span></div></li>'}).join("")+'</ul>'
+      +'<div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp">'+(PRO?'<button class="sm" data-act="nx" data-v="'+p.id+'" aria-pressed="'+(!!p.nx)+'">'+(p.nx?"Next up":"Play next")+'</button>':'')+tnLockBtn(p)+'<button class="sm" data-act="rest" data-v="'+p.id+'">'+(p.rest?"Back":"Rest")+'</button><button class="sm" data-act="left" data-v="'+p.id+'">Left early</button><button class="x" aria-label="Remove player" data-act="del" data-v="'+p.id+'"'+(ARM.k==="del"+p.id?' style="font-size:14px;font-weight:800"':'')+'>'+(ARM.k==="del"+p.id?"Remove?":"\u00d7")+'</button></span></div></li>'}).join("")+'</ul>'
     :'<div class="empty">'+ic(sport())+'<p class="hint">Nobody waiting. Add players below.</p></div>';
   if(gone.length)h+='<h2>'+ic("users")+'Left early ('+gone.length+')</h2><ul class="q wlist">'+gone.map(function(p){var st=pst(p),ed=canEdit(),chip=!PRO?'':ed?'<button class="chip st-'+st+'" data-act="pgoq" data-v="'+p.id+'" aria-label="Record payment for '+esc(p.n)+'">'+SLBL[st]+'</button>':'<span class="chip st-'+st+'">'+SLBL[st]+'</span>';
     return'<li class="wi rest"><div class="l1">'+av(p)+esc(p.n)+tnLk(p)+'</div><div class="l2">GP '+(p.p||0)+' &middot; '+LV[p.l]+' &middot; Left early'+(p.lt?' at '+esc(p.lt):'')+'</div><div class="l3">\ud83c\udfc6 '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div><div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp"><button class="sm" data-act="left" data-v="'+p.id+'">Back</button></span></div></li>'}).join("")+'</ul><p class="hint">Players who left early stay in the ranking and payments, but are not picked by Auto fill.</p>';
