@@ -587,7 +587,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=138,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=139,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -726,7 +726,7 @@ function tnGameOk(a,b,T){var x=String(a).trim(),y=String(b).trim();if(x===""||y=
   return""}
 function tnStand(){var T=TN(),st={},a,out=[],i=0,j;
   T.pairs.forEach(function(p){st[p.id]={p:p,gp:0,w:0,x:0,pt:0,pf:0,pa:0}});
-  T.ms.forEach(function(m){if(m.k!=="g"||m.st!=="d"||!m.g||!m.g[0])return;var A=st[m.a],B=st[m.b];if(!A||!B)return;var ga=m.g[0][0],gb=m.g[0][1];
+  T.ms.forEach(function(m){if(m.k!=="g"||m.st!=="d"||!m.g||!m.g[0])return;var A=st[m.a],B=st[m.b];if(!A||!B)return;var ga=+m.g[0][0]||0,gb=+m.g[0][1]||0;
     A.gp++;B.gp++;A.pf+=ga;A.pa+=gb;B.pf+=gb;B.pa+=ga;if(m.win===m.a){A.w++;A.pt+=2;B.x++}else{B.w++;B.pt+=2;A.x++}});
   a=Object.keys(st).map(function(k){var o=st[k];o.pd=o.pf-o.pa;return o});
   a.sort(function(x,y){return y.pt-x.pt||x.p.an.localeCompare(y.p.an)});
@@ -764,14 +764,15 @@ function tnNames(pr){return tnIds(pr).map(function(id){return tnPn(pr,id)}).join
 function tnPairLbl(pr){return tnIds(pr).map(function(id){var p=P(id);return(p?av(p):"")+esc(id===pr.a?pr.an:pr.bn)}).join(" - ")}
 function tnTg(m){var f=TN().fmt;return m.k==="f"?f.ft:f.t}
 function tnNeed(m){var f=TN().fmt;return m.k==="f"?Math.ceil(f.bo/2):1}
-function tnWins(m){var a=0,b=0;(m.g||[]).forEach(function(g){if(g[0]>g[1])a++;else b++});return[a,b]}
+function tnWins(m){var a=0,b=0;(m.g||[]).forEach(function(g){if(g[2]===0)a++;else if(g[2]===1)b++;else if(g[0]>g[1])a++;else b++});return[a,b]}
+function tnGs(g){return g[0]==null?"no score":g[0]+"-"+g[1]}
 function tnSeg(k,arr,cur){return'<div class="seg" role="group">'+arr.map(function(x){return'<button data-act="tnf" data-k="'+k+'" data-v="'+x[0]+'" aria-pressed="'+(String(x[0])===String(cur))+'">'+x[1]+'</button>'}).join("")+'</div>'}
 function tnSetupBox(){var T=TN(),f=T.fmt,n=T.pairs.length,mt=n*(n-1)/2,h='';
   h+='<p class="hint" style="margin:6px 0">Make pairs: tap <b>🔒 Lock partner</b> on one player in the Waiting list below, then <b>🔒 Lock with ...</b> on the partner.</p>';
   h+='<div class="hint" style="margin:8px 0 4px">Group stage: one game to</div>'+tnSeg("t",[[11,"11"],[15,"15"],[21,"21"],[30,"30"]],f.t)
    +'<div class="hint" style="margin:10px 0 4px">Play a final between the top two pairs</div>'+tnSeg("fin",[[1,"Yes"],[0,"No"]],f.fin)
    +(+f.fin?'<div class="hint" style="margin:10px 0 4px">Final: best of</div>'+tnSeg("bo",[[1,"1 game"],[3,"3 games"]],f.bo)+'<div class="hint" style="margin:10px 0 4px">Final: each game to</div>'+tnSeg("ft",[[11,"11"],[15,"15"],[21,"21"],[30,"30"]],f.ft):"")
-   +'<p class="hint" style="margin:10px 0 0">A game is won by 2 points. At '+(f.t-1)+'-'+(f.t-1)+' it goes to deuce and continues until one side leads by 2.</p>';
+   +'<p class="hint" style="margin:10px 0 0">You type the score and tap the winning team. The winner is the team you tap.</p>';
   h+='<div class="hint" style="margin:12px 0 4px"><b>Pairs ('+n+')</b></div>';
   if(!n)h+='<p class="hint" style="margin:0">No pairs yet.</p>';else h+=T.pairs.map(function(p){return'<div class="tnrow"><span><b>🔒 '+tnPairLbl(p)+'</b></span><button class="sm" data-act="tnunlock" data-v="'+p.id+'">Unlock</button></div>'}).join("");
   h+='<button class="win" style="width:100%;margin-top:10px" data-act="tnstart"'+(n<3?" disabled":"")+'>Start tournament'+(n>=3?" ("+mt+" group matches)":"")+'</button>'+(n<3?'<p class="hint" style="margin:6px 0 0">You need at least 3 pairs.</p>':'');
@@ -781,8 +782,8 @@ function tnRun(m,head){var T=TN(),A=tnPair(m.a),B=tnPair(m.b),fin=m.k==="f",mx=f
   var h='<section class="court m"><div class="chead"><b>'+head+'</b><span class="streak">'+ttl+'</span>'+(m.t0&&m.c?'<span class="tm">Started '+clk(m.t0)+'</span>':'')+'</div><div class="sides">'
    +[A,B].map(function(pr,i){var v=(m.sc||[])[i];return'<div class="side"><div class="names">'+tnNames(pr)+'</div><div class="streak">Team '+"AB".charAt(i)+(mx>1?" · "+w[i]+" won":"")+'</div><input class="score" type="number" inputmode="numeric" min="0" max="99" placeholder="Score" aria-label="Team '+"AB".charAt(i)+' score" data-tsc="'+m.id+'" data-s="'+i+'" value="'+(v==null?"":esc(v))+'"><button class="win" data-act="tnwin" data-v="'+m.id+'" data-s="'+i+'">🏆 Team '+"AB".charAt(i)+' won</button></div>'}).join("")
    +'</div><p class="streak" id="tmg'+m.id+'" style="margin:10px 0 0">'+marg(m.sc)+'</p>';
-  if(m.g&&m.g.length)h+='<p class="streak" style="margin:4px 0 0">Games: '+m.g.map(function(g){return g[0]+"-"+g[1]}).join(", ")+'</p>';
-  h+='<p class="hint" style="margin:6px 0 0">A game is played to '+tg+' and won by 2. From '+(tg-1)+'-'+(tg-1)+' it goes to deuce.</p><div class="pick2" style="margin-top:8px"><button class="wbtn" data-act="tnback" data-v="'+m.id+'">'+(m.old?"Cancel edit":"Cancel game")+'</button></div></section>';
+  if(m.g&&m.g.length)h+='<p class="streak" style="margin:4px 0 0">Games: '+m.g.map(tnGs).join(", ")+'</p>';
+  h+='<div class="pick2" style="margin-top:8px"><button class="wbtn" data-act="tnback" data-v="'+m.id+'">'+(m.old?"Cancel edit":"Cancel game")+'</button></div></section>';
   return h}
 function tnCourt(lb){var T=TN(),m=T.ms.filter(function(x){return(x.st==="a"||x.st==="r")&&x.c===lb})[0],head=sic()+'Court '+esc(lb);
   if(!m)return'<section class="court"><div class="chead"><b>'+head+'</b></div><p class="hint" style="margin:8px 0 0">Free. Pick a match in Next up and tap Move to Court '+esc(lb)+'.</p></section>';
@@ -814,7 +815,7 @@ function tnRight(){var T=TN();if(T.stage==="setup")return"";var st=tnStand(),dn=
   h+='<h2>'+ic("trophy")+'Leaderboard</h2><ol class="board">'+st.map(function(o,i){var l=i===0&&o.w>0;
     return'<li class="'+(l?"lead":"")+'"><span class="nm">'+(l?'<div style="font-weight:800;font-size:13px">Leading</div>':"")+tnPairLbl(o.p)+'<div class="em">'+emo(o)+'</div><small>GP '+o.gp+' &middot; '+o.pt+' pts &middot; '+(o.pd>0?"+":"")+o.pd+'</small></span><span class="wl"><b>'+o.w+'</b> W &nbsp;<b>'+o.x+'</b> L</span></li>'}).join("")+'</ol><p class="hint">Win = 2 points, loss = 0. Ties: result between the tied pairs, then point difference.</p>';
   if(dn.length)h+='<h2>'+ic("list")+'Results</h2>'+dn.map(function(m){var A=tnPair(m.a),B=tnPair(m.b);
-    return'<div class="tnrow"><span><b>'+(m.k==="f"?"Final: ":"")+esc(tnLbl(A))+'</b> vs <b>'+esc(tnLbl(B))+'</b><br><small>'+m.g.map(function(g){return g[0]+"-"+g[1]}).join(", ")+' &middot; won by '+esc(tnLbl(tnPair(m.win)))+'</small></span><button class="sm" data-act="tnedit" data-v="'+m.id+'">Edit</button></div>'}).join("");
+    return'<div class="tnrow"><span><b>'+(m.k==="f"?"Final: ":"")+esc(tnLbl(A))+'</b> vs <b>'+esc(tnLbl(B))+'</b><br><small>'+m.g.map(tnGs).join(", ")+' &middot; won by '+esc(tnLbl(tnPair(m.win)))+'</small></span><button class="sm" data-act="tnedit" data-v="'+m.id+'">Edit</button></div>'}).join("");
   return h}
 function tnAct(act,t){
   if(act==="tnclose"){S.tnv=false;save();render();return}
@@ -828,12 +829,11 @@ function tnAct(act,t){
   else if(act==="tnmove"){var cn=t.dataset.k,bz=tnBusy();if(!m||m.st!=="w"||bz[m.a]||bz[m.b])return;if(T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===cn})){toast("That court is busy.");return}snap();m.st="a";m.c=cn}
   else if(act==="tnstartg"){if(!m||m.st!=="a")return;snap();m.st="r";m.t0=Date.now();m.sc=null}
   else if(act==="tnback"){if(!m||(m.st!=="a"&&m.st!=="r"))return;snap();if(m.old){m.g=m.old.g;m.win=m.old.win;m.dn=m.old.dn;m.st="d";m.old=null;m.sc=null;tnAdvance()}else{m.st="w";m.c="";m.t0=0;m.g=[];m.sc=null}}
-  else if(act==="tnwin"){if(!m||m.st!=="r")return;var s=+t.dataset.s,sc=m.sc||["",""],er=tnGameOk(sc[0],sc[1],tnTg(m));if(er){toast(er);return}
-    var ga=+sc[0],gb=+sc[1];if((s===0&&ga<gb)||(s===1&&gb<ga)){toast("Team "+"AB".charAt(s)+" has the lower score. Tap the team with the higher score.");return}
-    snap();m.g=m.g||[];m.g.push([ga,gb]);m.sc=null;var w=tnWins(m),need=tnNeed(m);
+  else if(act==="tnwin"){if(!m||m.st!=="r")return;var s0=+t.dataset.s,sc=m.sc||["",""],has=String(sc[0]).trim()!==""&&String(sc[1]).trim()!=="";
+    snap();m.g=m.g||[];m.g.push([has?+sc[0]:null,has?+sc[1]:null,s0]);m.sc=null;var w=tnWins(m),need=tnNeed(m);
     if(w[0]>=need||w[1]>=need){m.win=w[0]>w[1]?m.a:m.b;m.st="d";m.c="";m.old=null;m.dn=++T.seq;tnAdvance()}}
   else if(act==="tnedit"){if(!m||m.st!=="d")return;if(m.k==="g"&&T.ms.some(function(x){return x.k==="f"&&x.st!=="w"})){toast("The final has started. Cancel or finish the final first.");return}
-    snap();m.old={g:m.g.slice(),win:m.win,dn:m.dn};var lg=m.g[m.g.length-1];m.g=m.g.slice(0,-1);m.sc=[String(lg[0]),String(lg[1])];m.st="r";m.win="";m.c="";tnAdvance()}
+    snap();m.old={g:m.g.slice(),win:m.win,dn:m.dn};var lg=m.g[m.g.length-1];m.g=m.g.slice(0,-1);m.sc=lg[0]==null?["",""]:[String(lg[0]),String(lg[1])];m.st="r";m.win="";m.c="";tnAdvance()}
   else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();S.tn=tnNew();T=S.tn}
   var sy=window.scrollY;save();render();window.scrollTo(0,sy)}
 document.addEventListener("input",function(e){var el=e.target;if(!el||!el.dataset||!el.dataset.tsc)return;var m=TN().ms.filter(function(x){return x.id===el.dataset.tsc})[0];if(!m)return;
