@@ -580,14 +580,14 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=127,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=128,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
   return'<div class="over" id="updnote" role="status"><b><span>A new version of NetPlay Queue is ready.</span></b><small><span>Back up first, then tap Update. Your players and payments stay on this phone.</span><span style="display:block;margin-top:6px"><button class="ghost" style="padding:4px 12px" data-act="updbk">Back up now</button> <button class="btn" style="padding:4px 14px" data-act="updgo">Update</button> <button class="ghost" style="padding:4px 12px" data-act="updlater">Later</button></span></small></div>'}
 /* Live page for players (Firebase Realtime Database over REST) */
 var LV_CFG={apiKey:"AIzaSyDHNwNpiiGKFuhTha9W09hBsijeFpgVdb8",db:"https://netplayqueue-e959e-default-rtdb.asia-southeast1.firebasedatabase.app"};
-var LIVE=(function(){try{var o=JSON.parse(localStorage.getItem("np-live")||"null");return o&&typeof o==="object"?o:{}}catch(e){return{}}})(),LIVET=0,LIVEL="",LIVEM="",LIVEX="",LIVED="";
+var LIVE=(function(){try{var o=JSON.parse(localStorage.getItem("np-live")||"null");return o&&typeof o==="object"?o:{}}catch(e){return{}}})(),LIVET=0,LIVEQR=false,LIVEL="",LIVEM="",LIVEX="",LIVED="";
 function liveHint(d){d=String(d||"");if(/CONFIGURATION_NOT_FOUND|ADMIN_ONLY_OPERATION|OPERATION_NOT_ALLOWED/.test(d))return"Firebase says: "+d+". Turn on Anonymous sign-in: Firebase, Build, Authentication, Sign-in method, Anonymous, Enable, Save.";if(/API key|API_KEY|referer|blocked/i.test(d))return"Firebase says: "+d+". Check the API key restrictions in Google Cloud.";if(/^40[13]/.test(d)||/Permission denied/i.test(d))return"Firebase says: "+d+". Check that the database Rules are published.";return d?"Firebase says: "+d:""}
 function liveOk(){return !!(LV_CFG.apiKey&&LV_CFG.db)}
 function liveStore(){try{localStorage.setItem("np-live",JSON.stringify(LIVE))}catch(e){}}
@@ -604,6 +604,8 @@ async function liveAuth(){
   if(LIVE.on&&LIVE.code&&LIVE.cuid&&LIVE.cuid!==LIVE.uid){LIVE.on=false;LIVE.code=""}
   liveStore();return LIVE.idt}
 function liveCode(){var a=new Uint8Array(14),s="",c="abcdefghjkmnpqrstuvwxyz23456789",i;crypto.getRandomValues(a);for(i=0;i<a.length;i++)s+=c[a[i]%c.length];return s}
+function liveDemo(){try{return new URL("live.html",location.href).href.split("?")[0]+"?c=demo&l="+encodeURIComponent(LANG||"en")}catch(e){return"live.html?c=demo"}}
+function liveAge(){if(!LIVE.on)return;if(!LIVE.st){LIVE.st=Date.now();liveStore();return}if(Date.now()-LIVE.st>864e5)liveStop("The live page was removed after 24 hours. Tap Start live page to make a new one.")}
 function liveUrl(){try{return new URL("live.html",location.href).href.split("?")[0]+"?c="+LIVE.code+"&l="+encodeURIComponent(LANG||"en")}catch(e){return""}}
 function liveSnap(){
   var L=labels(),nm=function(id){var p=P(id);return p?p.n:""},courts=[];
@@ -634,18 +636,65 @@ async function liveStart(){
   if(!liveOk())return;
   if(navigator.onLine===false){LIVEM="You are offline. Connect to the internet, then try again.";render();return}
   try{await liveAuth()}catch(e){LIVEM="Could not start the live page. Check your internet and try again.";LIVED=liveHint(e&&e.detail);render();return}
-  LIVE.code=liveCode();LIVE.cuid=LIVE.uid;LIVE.on=true;liveStore();LIVEM="";LIVED="";LIVEH="";render();await livePush(true);render()}
-async function liveStop(){
-  var code=LIVE.code;LIVE.on=false;LIVE.code="";liveStore();LIVEL="";LIVEX="";LIVEM="The live page was stopped.";render();
+  LIVE.code=liveCode();LIVE.cuid=LIVE.uid;LIVE.on=true;LIVE.st=Date.now();LIVEQR=false;liveStore();LIVEM="";LIVED="";LIVEH="";render();await livePush(true);render()}
+async function liveStop(why){
+  var code=LIVE.code;LIVE.on=false;LIVE.code="";LIVE.st=0;LIVEQR=false;liveStore();LIVEL="";LIVEX="";LIVEM=typeof why==="string"?why:"The live page was stopped.";render();
   if(!code||!liveOk())return;
   try{var tok=await liveAuth();await fetch(LV_CFG.db.replace(/\/+$/,"")+"/s/"+code+".json?auth="+encodeURIComponent(tok),{method:"DELETE"})}catch(e){}}
 function liveHtml(){
   if(!liveOk())return"";
-  if(!PRO)return'<div class="lockbox" id="livesec"><b>Live page for players (Pro)</b><p class="hint" style="margin:0 0 8px">Players open one link and see who is playing now, who is next and the ranking, live.</p><button class="ghost" data-act="gopro">Unlock with a Pro code</button></div>';
-  if(!LIVE.on||!LIVE.code)return'<div class="lockbox" id="livesec"><b>Live page for players</b><p class="hint" style="margin:0 0 8px">Players open one link and see who is playing now, who is next and the ranking, live. Only player names and results are shared, never payments. Your phone needs internet. Tap Stop to remove the page.</p><button class="btn" data-act="livego">Start live page</button><p class="hint" id="livemsg" style="margin:6px 0 0">'+esc(LIVEM)+'</p>'+(LIVED?'<p class="hint" style="margin:4px 0 0"><b>'+esc(LIVED)+'</b></p>':"")+'</div>';
-  return'<div class="lockbox" id="livesec"><b>Live page is on</b><p class="hint" style="margin:0 0 8px">Send this link to your players, for example in your group chat.</p><input type="text" readonly id="liveurl" value="'+esc(liveUrl())+'" aria-label="Live page link" style="width:100%"><div class="pick2" style="margin-top:8px"><button class="ghost" data-act="livecopy">Copy link</button><button class="ghost" data-act="liveshare">Share</button></div><button class="ghost" style="margin-top:8px" data-act="livestop">Stop live page</button><p class="hint" id="livemsg" style="margin:6px 0 0">'+esc(LIVEX||(LIVEL?"Live. Last update "+LIVEL:""))+'</p>'+(LIVED?'<p class="hint" style="margin:4px 0 0"><b>'+esc(LIVED)+'</b></p>':"")+'</div>'}
-setInterval(function(){if(LIVE.on&&!document.hidden)livePush(false)},6e4);
+  if(!PRO)return'<div class="lockbox" id="livesec"><b>Live page for players (Pro)</b><p class="hint" style="margin:0 0 8px">Players open one link and see who is playing now, who is next and the ranking, live.</p><button class="ghost" data-act="gopro">Unlock with a Pro code</button> <a class="ghost" href="'+esc(liveDemo())+'" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;margin-top:8px">See a demo of the live page</a></div>';
+  if(!LIVE.on||!LIVE.code)return'<div class="lockbox" id="livesec"><b>Live page for players</b><p class="hint" style="margin:0 0 8px">Players open one link and see who is playing now, who is next and the ranking, live. Only player names and results are shared, never payments. Your phone needs internet. Tap Stop to remove the page.</p><button class="btn" data-act="livego">Start live page</button> <a class="ghost" href="'+esc(liveDemo())+'" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;margin-top:8px">See a demo of the live page</a><p class="hint" id="livemsg" style="margin:6px 0 0">'+esc(LIVEM)+'</p>'+(LIVED?'<p class="hint" style="margin:4px 0 0"><b>'+esc(LIVED)+'</b></p>':"")+'</div>';
+  return'<div class="lockbox" id="livesec"><b>Live page is on</b><p class="hint" style="margin:0 0 8px">Send this link to your players, for example in your group chat.</p><input type="text" readonly id="liveurl" value="'+esc(liveUrl())+'" aria-label="Live page link" style="width:100%"><div class="pick2" style="margin-top:8px"><button class="ghost" data-act="livecopy">Copy link</button><button class="ghost" data-act="liveshare">Share</button><button class="ghost" data-act="liveqr">'+(LIVEQR?"Hide QR code":"Show QR code")+'</button></div>'+(LIVEQR?'<div style="background:#fff;padding:8px;border-radius:12px;margin-top:10px;max-width:260px;margin-left:auto;margin-right:auto">'+qrSvg(liveUrl())+'</div><p class="hint" style="text-align:center;margin:6px 0 0">Players scan this with their phone camera.</p>':"")+'<button class="ghost" style="margin-top:8px" data-act="livestop">Stop live page</button><p class="hint" id="livemsg" style="margin:6px 0 0">'+esc(LIVEX||(LIVEL?"Live. Last update "+LIVEL:""))+'</p>'+(LIVED?'<p class="hint" style="margin:4px 0 0"><b>'+esc(LIVED)+'</b></p>':"")+'</div>'}
+setInterval(function(){liveAge();if(LIVE.on&&!document.hidden)livePush(false)},6e4);setTimeout(liveAge,4000);
 window.addEventListener("online",function(){if(LIVE.on)livePush(true)});
+function qrSvg(txt){
+  var u=unescape(encodeURIComponent(String(txt))),dat=[],i,j,k;for(i=0;i<u.length;i++)dat.push(u.charCodeAt(i));
+  var EC=[0,10,16,26,18,24,16,18,22,22],BK=[0,1,1,1,2,2,4,4,4,5];
+  function raw(v){var r=(16*v+128)*v+64;if(v>=2){var a=Math.floor(v/7)+2;r-=(25*a-10)*a-55;if(v>=7)r-=36}return r}
+  var ver,nd;for(ver=1;ver<=9;ver++){nd=Math.floor(raw(ver)/8)-EC[ver]*BK[ver];if(12+8*dat.length<=nd*8)break}
+  if(ver>9)return"";
+  var bits=[];function put(v,n){for(var b=n-1;b>=0;b--)bits.push((v>>>b)&1)}
+  put(4,4);put(dat.length,8);dat.forEach(function(b){put(b,8)});
+  var cap=nd*8;put(0,Math.min(4,cap-bits.length));while(bits.length%8)bits.push(0);
+  for(var pd=0xEC;bits.length<cap;pd^=0xEC^0x11)put(pd,8);
+  var cw=[];for(i=0;i<bits.length;i+=8){var by=0;for(j=0;j<8;j++)by=by*2+bits[i+j];cw.push(by)}
+  function mul(x,y){var z=0;for(var s=7;s>=0;s--){z=(z<<1)^((z>>>7)*0x11D);z^=((y>>>s)&1)*x}return z}
+  var ne=EC[ver],dv=[];for(i=0;i<ne-1;i++)dv.push(0);dv.push(1);var rt=1;
+  for(i=0;i<ne;i++){for(j=0;j<dv.length;j++){dv[j]=mul(dv[j],rt);if(j+1<dv.length)dv[j]^=dv[j+1]}rt=mul(rt,2)}
+  var nb=BK[ver],rc=Math.floor(raw(ver)/8),ns=nb-rc%nb,sl=Math.floor(rc/nb),blocks=[];
+  for(i=0,k=0;i<nb;i++){var d=cw.slice(k,k+sl-ne+(i<ns?0:1));k+=d.length;
+    var r=dv.map(function(){return 0});d.forEach(function(b){var f=b^r.shift();r.push(0);dv.forEach(function(c,x){r[x]^=mul(c,f)})});
+    if(i<ns)d.push(0);blocks.push(d.concat(r))}
+  var all=[];for(i=0;i<blocks[0].length;i++)for(j=0;j<nb;j++)if(i!==sl-ne||j>=ns)all.push(blocks[j][i]);
+  var n=ver*4+17,M=[],F=[];for(i=0;i<n;i++){M.push(new Array(n).fill(false));F.push(new Array(n).fill(false))}
+  function sf(x,y,v){M[y][x]=v;F[y][x]=true}
+  for(i=0;i<n;i++){sf(6,i,i%2===0);sf(i,6,i%2===0)}
+  [[3,3],[n-4,3],[3,n-4]].forEach(function(c){for(var dy=-4;dy<=4;dy++)for(var dx=-4;dx<=4;dx++){var ds=Math.max(Math.abs(dx),Math.abs(dy)),xx=c[0]+dx,yy=c[1]+dy;if(xx>=0&&xx<n&&yy>=0&&yy<n)sf(xx,yy,ds!==2&&ds!==4)}});
+  var ap=[];if(ver>1){var na=Math.floor(ver/7)+2,st=Math.ceil((ver*4+4)/(na*2-2))*2;ap=[6];for(var ps=n-7;ap.length<na;ps-=st)ap.splice(1,0,ps)}
+  for(i=0;i<ap.length;i++)for(j=0;j<ap.length;j++){if((i===0&&j===0)||(i===0&&j===ap.length-1)||(i===ap.length-1&&j===0))continue;
+    for(var ey=-2;ey<=2;ey++)for(var ex=-2;ex<=2;ex++)sf(ap[i]+ex,ap[j]+ey,Math.max(Math.abs(ex),Math.abs(ey))!==1)}
+  function fmt(mask){var dd=mask,rm=dd;for(var q=0;q<10;q++)rm=(rm<<1)^((rm>>>9)*0x537);var bt=((dd<<10)|rm)^0x5412;function g(x){return((bt>>>x)&1)!==0}
+    for(var a=0;a<=5;a++)sf(8,a,g(a));sf(8,7,g(6));sf(8,8,g(7));sf(7,8,g(8));for(a=9;a<15;a++)sf(14-a,8,g(a));
+    for(a=0;a<8;a++)sf(n-1-a,8,g(a));for(a=8;a<15;a++)sf(8,n-15+a,g(a));sf(8,n-8,true)}
+  fmt(0);
+  if(ver>=7){var rm2=ver;for(i=0;i<12;i++)rm2=(rm2<<1)^((rm2>>>11)*0x1F25);var vb=(ver<<12)|rm2;
+    for(i=0;i<18;i++){var bt2=((vb>>>i)&1)!==0,a2=n-11+i%3,b2=Math.floor(i/3);sf(a2,b2,bt2);sf(b2,a2,bt2)}}
+  var p=0;for(var right=n-1;right>=1;right-=2){if(right===6)right=5;
+    for(var vt=0;vt<n;vt++)for(j=0;j<2;j++){var x=right-j,y=((right+1)&2)===0?n-1-vt:vt;if(!F[y][x]&&p<all.length*8){M[y][x]=((all[p>>>3]>>>(7-(p&7)))&1)!==0;p++}}}
+  function mk(m){for(var y=0;y<n;y++)for(var x=0;x<n;x++){if(F[y][x])continue;var iv;
+    switch(m){case 0:iv=(x+y)%2===0;break;case 1:iv=y%2===0;break;case 2:iv=x%3===0;break;case 3:iv=(x+y)%3===0;break;case 4:iv=(Math.floor(x/3)+Math.floor(y/2))%2===0;break;case 5:iv=x*y%2+x*y%3===0;break;case 6:iv=(x*y%2+x*y%3)%2===0;break;default:iv=((x+y)%2+x*y%3)%2===0}
+    if(iv)M[y][x]=!M[y][x]}}
+  function pen(){var s=0,y,x,run,dk=0;
+    for(var t=0;t<2;t++){for(y=0;y<n;y++){run=1;var ln="";for(x=0;x<n;x++){var c=t?M[x][y]:M[y][x];ln+=c?"1":"0";if(x>0){var pc=t?M[x-1][y]:M[y][x-1];if(c===pc){run++;if(run===5)s+=3;else if(run>5)s++}else run=1}}
+      var z=-1;while((z=ln.indexOf("10111010000",z+1))>=0)s+=40;z=-1;while((z=ln.indexOf("00001011101",z+1))>=0)s+=40}}
+    for(y=0;y<n;y++)for(x=0;x<n;x++){if(M[y][x])dk++;if(x<n-1&&y<n-1&&M[y][x]===M[y][x+1]&&M[y][x]===M[y+1][x]&&M[y][x]===M[y+1][x+1])s+=3}
+    s+=Math.floor(Math.abs(dk*20-n*n*10)/(n*n))*10;return s}
+  var bm=0,bp=1e9;for(var m=0;m<8;m++){mk(m);fmt(m);var pp=pen();if(pp<bp){bp=pp;bm=m}mk(m)}
+  mk(bm);fmt(bm);
+  var q=4,sz=n+q*2,d2="";for(y=0;y<n;y++)for(x=0;x<n;x++)if(M[y][x])d2+="M"+(x+q)+","+(y+q)+"h1v1h-1z";
+  return'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+sz+" "+sz+'" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="'+sz+'" height="'+sz+'" fill="#fff"/><path d="'+d2+'" fill="#000"/></svg>'}
+
 function updGo(){ if(!UPDB&&!UPDW){UPDW=true;toast("Tap Back up now first to save your data. Tap Update again to continue without a backup.");return}
   if(navigator.onLine===false){toast("You are offline. Connect to the internet, then tap Update.");return}
   location.replace(location.pathname+"?v="+UPDV)}
@@ -1140,7 +1189,7 @@ document.addEventListener("click",function(e){
   else if(act==="ppdfp"||act==="ppdfq"){if(!PRO){needPro("PDF export");return}if(canEdit())exportPdf(act==="ppdfq"?"qm":"player");return}
   else if(act==="lay"){S.lay=v;if(window.applyLayout)applyLayout()}
   else if(act==="fx"){if(!PRO&&v!=="1"){needPro("Split total");return}snap();S.cf.fixed=v==="1"}
-  else if(act==="end"){if(S.courts.some(function(cc){return cc.run}))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg="";recordSession()}}
+  else if(act==="end"){if(S.courts.some(function(cc){return cc.run}))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg="";recordSession();if(LIVE.on)liveStop("The live page was removed because the game ended.")}}
   else if(act==="reopen"){if(!armed("reopen",t,"Tap again to clear everything and start blank"))return;snap();resetSession()}
   else if(act==="export"){exportData();return}
   else if(act==="pagefree"){openPage("free");return}
@@ -1153,6 +1202,7 @@ document.addEventListener("click",function(e){
   else if(act==="updlater"){UPDH=true;render();return}
   else if(act==="livego"){liveStart();return}
   else if(act==="livestop"){liveStop();return}
+  else if(act==="liveqr"){LIVEQR=!LIVEQR;render();return}
   else if(act==="livecopy"){var lu=liveUrl();try{navigator.clipboard.writeText(lu).then(function(){toast("Link copied.")},function(){var i=document.getElementById("liveurl");if(i){i.select();i.setSelectionRange(0,999)}toast("Select the link and copy it.")})}catch(e){var i2=document.getElementById("liveurl");if(i2){i2.select();i2.setSelectionRange(0,999)}toast("Select the link and copy it.")}return}
   else if(act==="liveshare"){var lu2=liveUrl();if(navigator.share){navigator.share({title:"NetPlay Queue live",text:"Who is playing and who is next:",url:lu2}).catch(function(){})}else{try{navigator.clipboard.writeText(lu2);toast("Link copied.")}catch(e){toast("Select the link and copy it.")}}return}
   else if(act==="bkpick"){var bf=document.getElementById("bkfile");if(bf){bf.value="";bf.click()}return}
@@ -1165,7 +1215,7 @@ document.addEventListener("click",function(e){
   else if(act==="creset"){snap();S.q=S.q.concat(c.keep);c.keep=[];c.s=0;c.sel=["","","",""];c.last=null;c.msg=""}
   else if(act==="nxclr"){snap();c.sel=["","","",""];c.msg=""}
   else if(act==="nxmv"){var tc=S.courts[+v];if(!tc||tc.run||tc.sel.some(Boolean)||tc.keep.length||!c.sel.every(Boolean)){return}
-    snap();tc.sel=c.sel.slice();tc.msg="";c.sel=["","","",""];c.msg="";fill(c);if(!c.sel.some(Boolean))c.msg=""}
+    snap();tc.sel=c.sel.slice();tc.cat=c.cat;tc.msg="";c.sel=["","","",""];c.msg="";fill(c);if(!c.sel.some(Boolean))c.msg=""}
   else if(act==="nxadd"){if(!PRO){toast("Multiple waiting lists are available in the Pro version. Open Menu to enter your Pro code.");return}snap();if(S.nx.length<NX_MAX)S.nx.push(nxNew())}
   else if(act==="nxrm"){snap();S.nx.splice(+t.dataset.c-100,1)}
   else if(act==="fill"){fill(c)}
