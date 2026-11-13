@@ -185,6 +185,13 @@ details.more summary{cursor:pointer;font-weight:700}
 #fpage .top button{margin:0}
 #fpage .prices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
 #fpage .prices a{text-align:center;text-decoration:none}
+.tnrow{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;margin-bottom:6px}
+.tnrow.sel{border-color:var(--ink)}.tnrow small{color:var(--mute)}
+.tncard{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.tncard .ch2{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px}
+.tnvs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;font-weight:700}.tnvs .x{color:var(--mute);font-size:12px}.tnvs div:last-child{text-align:end}
+.tnsc{display:flex;align-items:center;gap:8px;margin-top:6px}.tnsc input{width:84px;font-size:18px;text-align:center;padding:8px}
+.tnwrap{overflow-x:auto}.tnt{width:100%;border-collapse:collapse;font-size:14px}.tnt th,.tnt td{padding:6px 5px;text-align:center;border-bottom:1px solid var(--line)}.tnt th:nth-child(2),.tnt td:nth-child(2){text-align:start}.tnt th{color:var(--mute);font-weight:600;font-size:12px}
 h1 .ic{width:30px;height:30px;margin-right:8px;vertical-align:-6px;color:var(--ink)}
 .chead .ic{width:20px;height:20px;margin-right:6px;vertical-align:-4px;color:var(--ink)}
 .gsel{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
@@ -580,7 +587,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=133,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=134,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -608,6 +615,7 @@ function liveDemo(){try{return new URL("live.html",location.href).href.split("?"
 function liveAge(){if(!LIVE.on)return;if(!LIVE.st){LIVE.st=Date.now();liveStore();return}if(Date.now()-LIVE.st>6048e5)liveStop("The live page was removed because it was not used for 7 days. Tap Start live page to make a new one.")}
 function liveUrl(){try{return new URL("live.html",location.href).href.split("?")[0]+"?c="+LIVE.code+"&l="+encodeURIComponent(LANG||"en")}catch(e){return""}}
 function liveSnap(){
+  var tsn=typeof tnSnap==="function"?tnSnap():null;if(tsn)return tsn;
   if(S.ended)return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",e:1,courts:[],nc:[],next:[],rk:[]};
   var L=labels(),nm=function(id){var p=P(id);return p?p.n:""},courts=[];
   var nc=[];S.courts.forEach(function(c,i){if(!c.run){var pp=c.sel.map(nm).filter(Boolean);if(pp.length)nc.push({n:L[i]||String(i+1),p:pp});return}var ct=CATS.filter(function(x){return x[0]===c.cat})[0];
@@ -619,7 +627,7 @@ var LIVEH="",LIVETM=0,LIVEBUSY=false;
 function liveSoon(){clearTimeout(LIVETM);LIVETM=setTimeout(function(){livePush(false)},1500)}
 async function livePush(force){
   if(!liveOk()||!LIVE.on||!LIVE.code||LIVEBUSY)return;
-  var snap=liveSnap(),h=JSON.stringify([snap.sp,snap.gd,snap.e,snap.courts,snap.nc,snap.next,snap.rk]);
+  var snap=liveSnap(),h=JSON.stringify([snap.sp,snap.gd,snap.e,snap.courts,snap.nc,snap.next,snap.rk,snap.tm,snap.pod,snap.st]);
   if(!force&&h===LIVEH&&Date.now()-LIVET<9e4)return;
   LIVEBUSY=true;
   try{
@@ -696,6 +704,136 @@ function qrSvg(txt){
   var q=4,sz=n+q*2,d2="";for(y=0;y<n;y++)for(x=0;x<n;x++)if(M[y][x])d2+="M"+(x+q)+","+(y+q)+"h1v1h-1z";
   return'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+sz+" "+sz+'" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="'+sz+'" height="'+sz+'" fill="#fff"/><path d="'+d2+'" fill="#000"/></svg>'}
 
+/* ---- Tournament: locked pairs, group stage, final ---- */
+var TNO=false;
+function tnNew(){return{stage:"setup",fmt:{t:30,ft:30,bo:3,fin:1},pairs:[],ms:[],sel:"",seq:0}}
+function TN(){if(!S.tn||typeof S.tn!=="object"||!S.tn.fmt)S.tn=tnNew();return S.tn}
+function tnPair(id){return TN().pairs.filter(function(p){return p.id===id})[0]}
+function tnLbl(p){return p?p.an+" / "+p.bn:""}
+function tnPairOf(pid){return TN().pairs.filter(function(p){return p.a===pid||p.b===pid})[0]}
+function tnRR(ids){var a=ids.slice(),r=[],n,i,j;if(a.length%2)a.push(null);n=a.length;
+  for(i=0;i<n-1;i++){for(j=0;j<n/2;j++){var x=a[j],y=a[n-1-j];if(x&&y)r.push([x,y])}a.splice(1,0,a.pop())}return r}
+function tnGameOk(a,b,T){var x=String(a).trim(),y=String(b).trim();if(x===""||y===""||isNaN(+x)||isNaN(+y)||+x<0||+y<0||(+x)%1||(+y)%1)return"Enter both scores as whole numbers.";
+  a=+x;b=+y;var hi=Math.max(a,b),lo=Math.min(a,b);
+  if(hi<T)return"A game is played to "+T+". The winner needs at least "+T+" points.";
+  if(hi===T&&lo>T-2)return"At "+a+"-"+b+" the game is not over. From "+(T-1)+"-"+(T-1)+" it goes to deuce and continues until one side leads by 2.";
+  if(hi>T&&hi-lo!==2)return"After deuce the winner leads by exactly 2, for example "+(T+1)+"-"+(T-1)+".";
+  return""}
+function tnSave(m,vals){var T=TN(),fin=m.k==="f",need=fin?Math.ceil(T.fmt.bo/2):1,tg=fin?T.fmt.ft:T.fmt.t,mx=fin?T.fmt.bo:1,g=[],wa=0,wb=0,i;
+  for(i=0;i<mx;i++){var a=String(vals[i*2]==null?"":vals[i*2]).trim(),b=String(vals[i*2+1]==null?"":vals[i*2+1]).trim();if(a===""&&b==="")break;
+    if(wa>=need||wb>=need)return"The match was already decided before game "+(i+1)+". Clear game "+(i+1)+".";
+    var er=tnGameOk(a,b,tg);if(er)return(mx>1?"Game "+(i+1)+": ":"")+er;a=+a;b=+b;g.push([a,b]);if(a>b)wa++;else wb++}
+  if(wa<need&&wb<need)return g.length?"The match is not finished. Enter the next game.":"Enter the score.";
+  m.g=g;m.win=wa>wb?m.a:m.b;m.st="d";m.c="";m.old=null;m.dn=++T.seq;return""}
+function tnStand(){var T=TN(),st={},a,out=[],i=0,j;
+  T.pairs.forEach(function(p){st[p.id]={p:p,gp:0,w:0,x:0,pt:0,pf:0,pa:0}});
+  T.ms.forEach(function(m){if(m.k!=="g"||m.st!=="d"||!m.g||!m.g[0])return;var A=st[m.a],B=st[m.b];if(!A||!B)return;var ga=m.g[0][0],gb=m.g[0][1];
+    A.gp++;B.gp++;A.pf+=ga;A.pa+=gb;B.pf+=gb;B.pa+=ga;if(m.win===m.a){A.w++;A.pt+=2;B.x++}else{B.w++;B.pt+=2;A.x++}});
+  a=Object.keys(st).map(function(k){var o=st[k];o.pd=o.pf-o.pa;return o});
+  a.sort(function(x,y){return y.pt-x.pt||x.p.an.localeCompare(y.p.an)});
+  while(i<a.length){j=i;while(j<a.length&&a[j].pt===a[i].pt)j++;var g=a.slice(i,j);
+    if(g.length>1){var ids=g.map(function(o){return o.p.id});g.forEach(function(o){o.h=0});
+      T.ms.forEach(function(m){if(m.k!=="g"||m.st!=="d"||ids.indexOf(m.a)<0||ids.indexOf(m.b)<0)return;g.forEach(function(o){if(o.p.id===m.win)o.h+=2})});
+      g.sort(function(x,y){return y.h-x.h||(y.w-y.x)-(x.w-x.x)||y.pd-x.pd||x.p.an.localeCompare(y.p.an)})}
+    out=out.concat(g);i=j}
+  return out}
+function tnBusy(){var b={};TN().ms.forEach(function(m){if(m.st==="a"||m.st==="r"){b[m.a]=1;b[m.b]=1}});return b}
+function tnAvail(){var T=TN(),b=tnBusy(),last={},idx=0;
+  T.ms.forEach(function(m){if(m.st==="d"){last[m.a]=Math.max(last[m.a]||0,m.dn||0);last[m.b]=Math.max(last[m.b]||0,m.dn||0)}});
+  return T.ms.map(function(m,i){m.o=i;return m}).filter(function(m){return m.st==="w"&&!b[m.a]&&!b[m.b]})
+    .sort(function(x,y){return((last[x.a]||0)+(last[x.b]||0))-((last[y.a]||0)+(last[y.b]||0))||x.o-y.o})}
+function tnAdvance(){var T=TN(),g=T.ms.filter(function(m){return m.k==="g"}),f=T.ms.filter(function(m){return m.k==="f"})[0];
+  if(T.stage==="setup")return;
+  if(g.some(function(m){return m.st!=="d"})){if(f&&f.st==="w")T.ms=T.ms.filter(function(m){return m.k!=="f"});T.stage="play";return}
+  if(!+T.fmt.fin){T.ms=T.ms.filter(function(m){return m.k!=="f"});T.stage="done";return}
+  if(!f){var s=tnStand();T.ms.push({id:"f1",a:s[0].p.id,b:s[1].p.id,k:"f",st:"w",c:"",t0:0,g:[],win:"",dn:0});T.stage="final";return}
+  T.stage=f.st==="d"?"done":"final"}
+function tnPodium(){var T=TN(),s=tnStand(),f=T.ms.filter(function(m){return m.k==="f"&&m.st==="d"})[0],r=[];
+  if(f){var lose=f.win===f.a?f.b:f.a;r=[f.win,lose];s.forEach(function(o){if(r.length<3&&r.indexOf(o.p.id)<0)r.push(o.p.id)})}
+  else r=s.slice(0,3).map(function(o){return o.p.id});
+  return r}
+function tnSnap(){var T=S.tn;if(!T||(T.stage!=="play"&&T.stage!=="final"&&T.stage!=="done"))return null;
+  var L=function(id){return tnLbl(tnPair(id))},courts=[],nc=[];
+  T.ms.forEach(function(m){if(m.st==="r"&&m.c)courts.push({n:m.c,cat:m.k==="f"?"tf":"tg",a:[L(m.a)],b:[L(m.b)],t0:m.t0||0});else if(m.st==="a"&&m.c)nc.push({n:m.c,p:[L(m.a),L(m.b)]})});
+  var tm=tnAvail().slice(0,6).map(function(m){return{a:L(m.a),b:L(m.b)}});
+  var rk=tnStand().map(function(o){return{n:tnLbl(o.p),w:o.w,x:o.x,p:o.gp,pt:o.pt}});
+  var pod=T.stage==="done"?tnPodium().map(L):[];
+  return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",tn:1,st:T.stage,courts:courts,nc:nc,next:[],tm:tm,rk:rk,pod:pod}}
+function tnSeg(k,arr,cur){return'<div class="seg" role="group">'+arr.map(function(x){return'<button data-act="tnf" data-k="'+k+'" data-v="'+x[0]+'" aria-pressed="'+(String(x[0])===String(cur))+'">'+x[1]+'</button>'}).join("")+'</div>'}
+function tnSetup(){var T=TN(),h="",f=T.fmt,pl=S.pl.filter(function(p){return !p.left});
+  h+='<p class="sub">Lock two players as a fixed pair. Pairs play each other once in a group stage, then the top two pairs play a final.</p>';
+  h+='<div class="lockbox"><b>Format</b><div class="hint" style="margin:8px 0 4px">Group stage: one game to</div>'+tnSeg("t",[[11,"11"],[15,"15"],[21,"21"],[30,"30"]],f.t)
+   +'<div class="hint" style="margin:10px 0 4px">Play a final between the top two pairs</div>'+tnSeg("fin",[[1,"Yes"],[0,"No"]],f.fin)
+   +(+f.fin?'<div class="hint" style="margin:10px 0 4px">Final: best of</div>'+tnSeg("bo",[[1,"1 game"],[3,"3 games"]],f.bo)+'<div class="hint" style="margin:10px 0 4px">Final: each game to</div>'+tnSeg("ft",[[11,"11"],[15,"15"],[21,"21"],[30,"30"]],f.ft):"")
+   +'<p class="hint" style="margin:10px 0 0">A game is won by 2 points. At '+(f.t-1)+'-'+(f.t-1)+' it goes to deuce and continues until one side leads by 2.</p></div>';
+  h+='<h2 style="font-size:18px;margin-top:18px">Players ('+pl.length+')</h2>';
+  if(!pl.length)h+='<p class="hint">No players yet. Close this page and add players on the main screen first.</p>';
+  var selp=T.sel?P(T.sel):null;
+  if(selp)h+='<p class="hint"><b>'+esc(selp.n)+'</b> is selected. Tap Lock on the partner.</p>';
+  pl.forEach(function(p){var pr=tnPairOf(p.id),isSel=T.sel===p.id,meta=p.g+" "+SH[p.l],btn;
+    if(pr)btn='<button class="sm" data-act="tnunlock" data-v="'+pr.id+'">Unlock</button>';
+    else if(isSel)btn='<button class="sm" data-act="tnlock" data-v="'+p.id+'">Cancel</button>';
+    else btn='<button class="sm" data-act="tnlock" data-v="'+p.id+'">🔒 Lock'+(selp?" with "+esc(selp.n):"")+'</button>';
+    h+='<div class="tnrow'+(isSel?" sel":"")+'"><span><b>'+(pr?'🔒 ':"")+esc(p.n)+'</b> <small>'+esc(meta)+(pr?' &middot; with '+esc(pr.a===p.id?pr.bn:pr.an):"")+'</small></span>'+btn+'</div>'});
+  h+='<h2 style="font-size:18px;margin-top:18px">Pairs ('+T.pairs.length+')</h2>';
+  if(!T.pairs.length)h+='<p class="hint">No pairs yet.</p>';else h+=T.pairs.map(function(p){return'<div class="tnrow"><span><b>🔒 '+esc(tnLbl(p))+'</b></span><button class="sm" data-act="tnunlock" data-v="'+p.id+'">Unlock</button></div>'}).join("");
+  var n=T.pairs.length,mt=n*(n-1)/2;
+  h+='<button class="btn full" style="margin-top:14px" data-act="tnstart"'+(n<3?" disabled":"")+'>Start tournament'+(n>=3?" ("+mt+" group matches)":"")+'</button>';
+  if(n<3)h+='<p class="hint">You need at least 3 pairs.</p>';
+  return h}
+function tnScoreForm(m){var T=TN(),fin=m.k==="f",mx=fin?T.fmt.bo:1,A=esc(tnLbl(tnPair(m.a))),B=esc(tnLbl(tnPair(m.b))),h='';
+  for(var i=0;i<mx;i++){var gv=(m.g&&m.g[i])||["",""];
+    h+='<div class="tnsc">'+(mx>1?'<span class="hint" style="margin:0 6px 0 0">Game '+(i+1)+'</span>':'')+'<input type="number" inputmode="numeric" min="0" data-sc="'+m.id+'" aria-label="Score of '+A+(mx>1?', game '+(i+1):'')+'" value="'+gv[0]+'"><span>-</span><input type="number" inputmode="numeric" min="0" data-sc="'+m.id+'" aria-label="Score of '+B+(mx>1?', game '+(i+1):'')+'" value="'+gv[1]+'"></div>'}
+  return'<div class="hint" style="margin:6px 0 2px">'+A+' (left) vs '+B+' (right)</div>'+h+'<div class="pick2" style="margin-top:8px"><button class="btn" data-act="tnscore" data-v="'+m.id+'">Save score</button><button class="ghost" data-act="tnback" data-v="'+m.id+'">Cancel game</button></div>'}
+function tnHtml(){var T=TN(),h='<h2>Tournament</h2>';
+  if(T.stage==="setup")return h+tnSetup();
+  var f=T.fmt,L=function(id){return esc(tnLbl(tnPair(id)))},labs=labels(),run=T.ms.filter(function(m){return m.st==="a"||m.st==="r"}),busyC={};
+  run.forEach(function(m){if(m.c)busyC[m.c]=1});
+  var stl=T.stage==="play"?"Group stage &middot; one game to "+f.t:T.stage==="final"?"Final &middot; best of "+f.bo+", each game to "+f.ft:"Finished";
+  h+='<p class="sub">'+stl+'</p>';
+  if(T.stage==="done"){var pod=tnPodium(),md=["🥇 1st place","🥈 2nd place","🥉 3rd place"];
+    h+='<div class="lockbox"><b>Final result</b>'+pod.map(function(id,i){return'<div class="tnrow" style="margin-top:8px"><span><b>'+md[i]+'</b></span><span>'+L(id)+'</span></div>'}).join("")+'</div>'}
+  if(run.length){h+='<h2 style="font-size:18px;margin-top:18px">On court</h2>';
+    run.sort(function(a,b){return String(a.c).localeCompare(String(b.c),undefined,{numeric:true})}).forEach(function(m){
+      var head=(m.c?"Court "+esc(m.c):"No court")+(m.k==="f"?" &middot; Final":""),sub=m.st==="a"?"Go to the court":"Playing"+(m.t0&&m.c?' &middot; <span data-t0="'+m.t0+'">'+fmt(Date.now()-m.t0)+"</span>":"");
+      h+='<div class="tncard"><div class="ch2"><b>'+head+'</b><span class="hint" style="margin:0">'+sub+'</span></div><div class="tnvs"><div>'+L(m.a)+'</div><div class="x">VS</div><div>'+L(m.b)+'</div></div>'
+        +(m.st==="a"?'<div class="pick2" style="margin-top:8px"><button class="btn" data-act="tnstartg" data-v="'+m.id+'">Start game</button><button class="ghost" data-act="tnback" data-v="'+m.id+'">Cancel</button></div>':tnScoreForm(m))+'</div>'})}
+  var av=T.stage==="done"?[]:tnAvail(),left=T.ms.filter(function(m){return m.st==="w"}).length;
+  if(T.stage!=="done"){h+='<h2 style="font-size:18px;margin-top:18px">Next up'+(left?' <span class="hint" style="font-weight:400">('+left+' to play)</span>':'')+'</h2>';
+    if(!av.length)h+='<p class="hint">'+(left?"The pairs left to play are on a court. Enter their scores first.":"No matches waiting.")+'</p>';
+    av.slice(0,4).forEach(function(m){var idle=labs.filter(function(x){return !busyC[x]});
+      h+='<div class="tncard"><div class="ch2"><b>'+(m.k==="f"?"Final":"Match")+'</b></div><div class="tnvs"><div>'+L(m.a)+'</div><div class="x">VS</div><div>'+L(m.b)+'</div></div>'
+        +(idle.length?'<div class="pick2" style="margin-top:8px">'+idle.map(function(x){return'<button class="win" data-act="tnmove" data-v="'+m.id+'" data-k="'+esc(x)+'">Move to Court '+esc(x)+'</button>'}).join("")+'</div>':'<p class="hint" style="margin:8px 0 0">All courts are busy.</p>')+'</div>'})}
+  var st=tnStand();
+  h+='<h2 style="font-size:18px;margin-top:18px">Standings</h2><div class="tnwrap"><table class="tnt"><thead><tr><th>#</th><th>Pair</th><th>GP</th><th>W</th><th>L</th><th>Pts</th><th>+/-</th></tr></thead><tbody>'
+    +st.map(function(o,i){return'<tr><td>'+(i+1)+'</td><td>'+esc(tnLbl(o.p))+'</td><td>'+o.gp+'</td><td>'+o.w+'</td><td>'+o.x+'</td><td><b>'+o.pt+'</b></td><td>'+(o.pd>0?"+":"")+o.pd+'</td></tr>'}).join("")+'</tbody></table></div><p class="hint">Win = 2 points, loss = 0. Ties: result between the tied pairs, then point difference.</p>';
+  var dn=T.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return b.dn-a.dn});
+  if(dn.length){h+='<h2 style="font-size:18px;margin-top:18px">Results</h2>';
+    dn.forEach(function(m){var sc=m.g.map(function(g){return g[0]+"-"+g[1]}).join(", ");
+      h+='<div class="tnrow"><span><b>'+(m.k==="f"?"Final: ":"")+L(m.a)+'</b> vs <b>'+L(m.b)+'</b><br><small>'+esc(sc)+' &middot; won by '+L(m.win)+'</small></span><button class="sm" data-act="tnedit" data-v="'+m.id+'">Edit</button></div>'})}
+  var lv=typeof liveHtml==="function"?liveHtml().replace(/ id="(livesec|liveurl|livemsg)"/g,' id="tn$1"'):"";
+  if(lv)h+='<h2 style="font-size:18px;margin-top:18px">Live page</h2><p class="hint">Players see who is playing, which court the next match goes to, and the standings.</p>'+lv;
+  h+='<button class="ghost" style="margin-top:18px;color:var(--danger)" data-act="tnreset">Reset tournament</button>';
+  return h}
+function tnRender(){var el=document.getElementById("fpage");if(!el||el.hidden||!TNO)return;var sy=el.scrollTop;
+  el.innerHTML='<div class="in"><div class="top"><button class="ghost" data-act="pageback">&larr; Back</button></div>'+tnHtml()+'</div>';applyLang();el.scrollTop=sy}
+function tnAct(act,t){var T=TN(),v=t.dataset.v,m=T.ms.filter(function(x){return x.id===v})[0],i;
+  if(act==="tnopen"){if(!PRO){needPro("Tournament mode");return}TNO=true;openPage("tn");return}
+  if(act==="tnf"){if(T.stage!=="setup")return;var k=t.dataset.k;snap();T.fmt[k]=+v}
+  else if(act==="tnlock"){if(T.stage!=="setup"||tnPairOf(v))return;if(!T.sel)T.sel=v;else if(T.sel===v)T.sel="";else{var a=P(T.sel),b=P(v);if(a&&b){snap();T.pairs.push({id:uid(),a:a.id,b:b.id,an:a.n,bn:b.n})}T.sel=""}}
+  else if(act==="tnunlock"){if(T.stage!=="setup")return;snap();T.pairs=T.pairs.filter(function(p){return p.id!==v});T.sel=""}
+  else if(act==="tnstart"){if(T.pairs.length<3){toast("You need at least 3 pairs.");return}snap();T.ms=tnRR(T.pairs.map(function(p){return p.id})).map(function(x,i){return{id:"m"+i,a:x[0],b:x[1],k:"g",st:"w",c:"",t0:0,g:[],win:"",dn:0}});T.stage="play";T.sel="";T.seq=0}
+  else if(act==="tnmove"){var cn=t.dataset.k;if(!m||m.st!=="w"||tnBusy()[m.a]||tnBusy()[m.b])return;if(T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===cn})){toast("That court is busy.");return}snap();m.st="a";m.c=cn}
+  else if(act==="tnstartg"){if(!m||m.st!=="a")return;snap();m.st="r";m.t0=Date.now()}
+  else if(act==="tnback"){if(!m||(m.st!=="a"&&m.st!=="r"))return;snap();if(m.old){m.g=m.old.g;m.win=m.old.win;m.dn=m.old.dn;m.st="d";m.old=null;tnAdvance()}else{m.st="w";m.c="";m.t0=0;m.g=[]}}
+  else if(act==="tnscore"){if(!m)return;var ins=document.querySelectorAll('[data-sc="'+m.id+'"]'),vals=[];for(i=0;i<ins.length;i++)vals.push(ins[i].value);snap();var er=tnSave(m,vals);if(er){UNDO.pop();toast(er);return}tnAdvance()}
+  else if(act==="tnedit"){if(!m||m.st!=="d")return;if(m.k==="g"&&T.ms.some(function(x){return x.k==="f"&&x.st!=="w"})){toast("The final has started. Cancel or finish the final first.");return}snap();m.old={g:m.g,win:m.win,dn:m.dn};m.st="r";m.win="";m.c="";tnAdvance()}
+  else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();S.tn=tnNew();T=S.tn}
+  save();tnRender()}
+
+function tnRefresh(){var a=document.activeElement;if(a&&a.tagName==="INPUT"&&a.closest&&a.closest("#fpage"))return;tnRender()}
+var _tnr=render;render=function(){_tnr.apply(this,arguments);if(TNO)tnRefresh()};
+
 function updGo(){ if(!UPDB&&!UPDW){UPDW=true;toast("Tap Back up now first to save your data. Tap Update again to continue without a backup.");return}
   if(navigator.onLine===false){toast("You are offline. Connect to the internet, then tap Update.");return}
   location.replace(location.pathname+"?v="+UPDV)}
@@ -712,20 +850,20 @@ function proHtml(){
 }
 function needPro(what){toast(what+" is a Pro feature. Open Menu to enter your Pro code.");return false}
 var FREE_F=[["Up to "+FREE_COURTS+" courts","Choose your own court numbers, for example 1, 3, 5."],["Mixed Doubles (XD), Women\u2019s Doubles (WD) and Men\u2019s Doubles (MD)","Each court has its own category. Mixed needs one woman and one man on each team."],["Add several players at once","Paste a list with a gender and level after each name, for example Jack M A or Maria F I. Preview it, fix any row with a tap, then add all."],["Badminton icons and winner pop-up","Choose Badminton or Pickleball at the top, locked while a game is in progress. The matching icon shows next to the app name and on every court card. A friendly empty list and a trophy pop-up when a game ends. The pop-up can be turned off in Menu."],["Left early button","Mark a player who went home. They stay in the ranking and payments with a full share, but are skipped by Auto fill and the name lists. A Back button returns them."],["Next-up team","Line up one team to play next, then move it onto any court that opens."],["Custom category","Pick any four names yourself with no gender or level rules. Auto fill takes the first four in the queue."],["Add players with a gender icon and skill level","Beginner/Novice, Intermediate, Advance or Open."],["Numbered waiting list","Sort A to Z, fewest games, level or queue order. Each row shows GP, level, wins and losses."],["Rest, back and remove buttons","Remove a player, or clear the whole waiting list with a two-tap safety check."],["Auto fill and manual picking for every court","Players who have not played yet go first, and the rotation stays fair."],["Rotation rules","Rotate partners every game, or let winners stay for 2 or 3 games."],["Court timer, scores and winning margin","Start a game, enter the winning score and see the margin and minutes played."],["Leaderboard","Top winners with a muscle icon for each win and a crying icon for each loss."],["Costs with a fixed amount per player","Set your currency symbol and see what each player pays."],["Game date, start and end time","Show the time when the session is over, then End game and Reopen games."],["Duplicate name warning","The same player name cannot be added twice. You get a warning instead."],["\u201cLeaving after this game\u201d button","Tap a player on a court and they rest automatically when the game ends."],["Share session summary","Copy a ready message with the date, games, top winners and what each player pays."],["Rematch button","Replay the same four players on the same court in one tap."],["Game history","See every finished game with its score, margin and time."],["Language","English, Arabic, Filipino and Hindi."],["Bigger text option","Normal, large or extra large."],["Quick tour and Install on home screen"],["Export game data (CSV)"],["Undo your last action"],["Works offline and saves on your device","Designed for phone, tablet and laptop, with a dark mode."],["Backup and restore","Save your players, payments and history to a file, and restore it on this or another phone."],["Works offline","After the first visit, the app opens without internet when you use it from its web link."]];
-var PRO_F=[["Everything in the Free version"],["Free trial for 2 uses","Try everything below for 2 uses. Games on the same day count as 1 use, and the next different date counts as use 2. Once per device."],["Up to 12 courts"],["Colour themes","Choose Court green or Night colours."],["Several next-up teams","Line up to 4 teams to play next."],["Two payment PDFs","Player copy hides the totals. Queue Master (QM) copy shows everything, with each court category and player level."],["My regular players list","Save your regulars once and add them all in one tap."],["Sound and vibration when the session end time is reached","Set the end time in Menu."],["Smart auto fill","Avoids repeat partners and opponents and balances teams by skill."],["Play next button","Move a waiting player to the front of the queue."],["Payment reminder messages","One tap writes a message for every player who has not paid."],["Player receipts","Copy a receipt for any player."],["Monthly report","Games, money collected, expenses and balance for each month."],["Season statistics","Games, wins and losses for every player across all sessions."],["Level-specific categories","Men\u2019s, Women\u2019s and Mixed (XD) Doubles: Intermediate & Advance, and Advanced Only."],["Live page for players","Share one link, for example in your group chat. Players see who is playing now, who is next and the ranking, live, with no app to install. Only names and results are shared, never payments. Your phone needs internet."],["Games played ranking","Every player\u2019s games, wins and losses with muscle and crying icons."],["Ranking page in the Player PDF","The Player copy payment PDF ends with the Games Played Ranking, with trophy and lose icons and the game icon (shuttlecock or pickleball)."],["Split total cost","Enter court rent and shuttlecock and divide the total between all players."],["Payments module","Payment overview, PAID, UNPAID, PARTIAL and EXEMPTED buttons for each player, and recording of cash, bank transfer and online payments."],["Transaction history","Every payment is logged, kept after Reopen games, and ready to export."],["Payment reports in PDF"],["Optional PIN lock for payments"],["\u201cNetPlay Queue Pro\u201d title","Shown once your Pro code is active."]];
+var PRO_F=[["Everything in the Free version"],["Free trial for 2 uses","Try everything below for 2 uses. Games on the same day count as 1 use, and the next different date counts as use 2. Once per device."],["Up to 12 courts"],["Colour themes","Choose Court green or Night colours."],["Several next-up teams","Line up to 4 teams to play next."],["Two payment PDFs","Player copy hides the totals. Queue Master (QM) copy shows everything, with each court category and player level."],["My regular players list","Save your regulars once and add them all in one tap."],["Sound and vibration when the session end time is reached","Set the end time in Menu."],["Smart auto fill","Avoids repeat partners and opponents and balances teams by skill."],["Play next button","Move a waiting player to the front of the queue."],["Payment reminder messages","One tap writes a message for every player who has not paid."],["Player receipts","Copy a receipt for any player."],["Monthly report","Games, money collected, expenses and balance for each month."],["Season statistics","Games, wins and losses for every player across all sessions."],["Level-specific categories","Men\u2019s, Women\u2019s and Mixed (XD) Doubles: Intermediate & Advance, and Advanced Only."],["Tournament mode","Lock two players as a fixed pair. Play a group stage with scores, then a final. Standings and the final result show on the live page too."],["Live page for players","Share one link, for example in your group chat. Players see who is playing now, who is next and the ranking, live, with no app to install. Only names and results are shared, never payments. Your phone needs internet."],["Games played ranking","Every player\u2019s games, wins and losses with muscle and crying icons."],["Ranking page in the Player PDF","The Player copy payment PDF ends with the Games Played Ranking, with trophy and lose icons and the game icon (shuttlecock or pickleball)."],["Split total cost","Enter court rent and shuttlecock and divide the total between all players."],["Payments module","Payment overview, PAID, UNPAID, PARTIAL and EXEMPTED buttons for each player, and recording of cash, bank transfer and online payments."],["Transaction history","Every payment is logged, kept after Reopen games, and ready to export."],["Payment reports in PDF"],["Optional PIN lock for payments"],["\u201cNetPlay Queue Pro\u201d title","Shown once your Pro code is active."]];
 function listHtml(a){return"<ol>"+a.map(function(x){return"<li>"+esc(x[0])+(x[1]?"<small>"+esc(x[1])+"</small>":"")+"</li>"}).join("")+"</ol>"}
 function openPage(k){
   var el=document.getElementById("fpage");if(!el)return;
   var h='<div class="in"><div class="top"><button class="ghost" data-act="pageback">&larr; Back</button></div>';
   if(k==="free")h+='<h2>Free version</h2><p class="sub">Everything below is included for free.</p>'+listHtml(FREE_F)+'<div class="lockbox" style="margin-top:16px"><b>Want more?</b><p class="hint" style="margin:0 0 8px">See everything NetPlay Pro adds.</p><button class="btn" data-act="pagepro">Pro version features</button></div>';
-  else if(k==="monthly")h+=monthlyHtml();else if(k==="season")h+=seasonHtml();else if(k==="tour")h+=tourHtml();else if(k==="install")h+=installHtml();else if(k==="browser")h+=browserHtml();
+  else if(k==="monthly")h+=monthlyHtml();else if(k==="season")h+=seasonHtml();else if(k==="tour")h+=tourHtml();else if(k==="tn")h+=tnHtml();else if(k==="install")h+=installHtml();else if(k==="browser")h+=browserHtml();
   else{h+='<h2>NetPlay Queue Pro</h2><p class="sub">Everything in Free, plus:</p>'+listHtml(PRO_F.slice(1).length?PRO_F:PRO_F);
     h+=LIC?'<div class="lockbox" style="margin-top:16px"><b>NetPlay Pro is active on this device.</b><p class="hint" style="margin:0">This license is for up to 2 devices.</p></div>':'<div style="margin-top:14px">'+trialBox()+'</div><div class="prices"><a class="btn" href="'+buyLink("1 year, 2 devices","50 AED")+'">1 year<br>50 AED<br><small>Good for 2 devices</small></a><a class="btn" href="'+buyLink("Lifetime, 2 devices","80 AED")+'">Lifetime<br>80 AED<br><small>Good for 2 devices</small></a></div><p class="hint">Prices are in UAE dirhams (AED). Tap a price to email the seller. After payment you will receive a Pro code to paste in Menu.</p>';
     h+='<button class="ghost" style="margin-top:6px" data-act="pagefree">Free version features</button>'}
   el.innerHTML=h+"</div>";applyLang();el.hidden=false;el.scrollTop=0;document.body.style.overflow="hidden";
   if(!openPage.h){try{history.pushState({np:1},"")}catch(e){}openPage.h=1}
 }
-function closePage(fromPop){try{localStorage.setItem("np-tour","1")}catch(e){}var el=document.getElementById("fpage");if(el)el.hidden=true;document.body.style.overflow="";if(openPage.h){openPage.h=0;if(!fromPop){try{history.back()}catch(e){}}}}
+function closePage(fromPop){TNO=false;try{localStorage.setItem("np-tour","1")}catch(e){}var el=document.getElementById("fpage");if(el)el.hidden=true;document.body.style.overflow="";if(openPage.h){openPage.h=0;if(!fromPop){try{history.back()}catch(e){}}}}
 window.addEventListener("popstate",function(){if(openPage.h)closePage(true)});
 
 function sessGet(){try{return JSON.parse(localStorage.getItem("np-sess")||"[]")}catch(e){return[]}}
@@ -790,7 +928,7 @@ function moreMenu(){
    +'<div class="hint" style="margin:12px 0 4px">Colour theme'+(PRO?"":" (Pro)")+'</div>'+seg("lth",[["def","Default"],["green","Court green"],["night","Night"]],PRO?LOOK.th:"def")
    +'<div class="hint" style="margin:12px 0 4px">Winner pop-up</div>'+seg("lcel",[["1","On"],["0","Off"]],LOOK.cel?"1":"0")
    +'<div class="hint" style="margin:12px 0 4px">Smart auto fill'+(PRO?"":" (Pro)")+'</div><div class="seg" role="group"><button data-act="tsp" aria-pressed="'+(PRO&&S.sp!==false)+'">Avoid repeat partners</button><button data-act="tbl" aria-pressed="'+(PRO&&S.bl!==false)+'">Balance teams</button></div>'
-   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="ghost" data-act="rptm">Monthly report'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="rpts">Season stats'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="pagetour">Quick tour</button><button class="ghost" data-act="pageinst">Install on home screen</button><button class="ghost" data-act="pagebrowser">Browser guide</button></div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="ghost" data-act="tnopen">Tournament'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="rptm">Monthly report'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="rpts">Season stats'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="pagetour">Quick tour</button><button class="ghost" data-act="pageinst">Install on home screen</button><button class="ghost" data-act="pagebrowser">Browser guide</button></div>'
    +'<p class="hint" style="margin:8px 0 0"><b>Always use the same browser.</b> Your players, payments and Pro unlock are saved inside this browser only.</p>'}
 function rosterGet(){try{return JSON.parse(localStorage.getItem("np-roster")||"[]")}catch(e){return[]}}
 function rosterSave(a){try{localStorage.setItem("np-roster",JSON.stringify(a))}catch(e){}}
@@ -1246,6 +1384,7 @@ document.addEventListener("click",function(e){
   else if(act==="hall"){S.hall=!S.hall}
   else if(act==="rematch"&&c.last&&c.last.ids){snap();c.sel=c.last.ids.slice();go(c)}
   else if(act==="rcpt"){if(!PRO){needPro("Receipts");return}var rp=P(v);if(rp)copyText(receiptText(rp),"Receipt copied. Paste it into a message.");return}
+  else if(act.slice(0,2)==="tn"&&typeof tnAct==="function"){tnAct(act,t);return}
   else if(act==="rptm"){if(!PRO){needPro("The monthly report");return}openPage("monthly");return}
   else if(act==="rpts"){if(!PRO){needPro("Season statistics");return}openPage("season");return}
   else if(act==="cprep"){copyText(v==="m"?monthlyText():seasonText(),"Copied.");return}
