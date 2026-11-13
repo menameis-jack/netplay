@@ -587,7 +587,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=143,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=144,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -760,22 +760,16 @@ function tnNext(){var T=TN(),busy={},nx=T.nx;T.ms.forEach(function(m){if((m.st==
   return'<section class="court"><div class="chead"><b>'+sic()+'Next up</b></div><div class="pick"><div class="tl">Team A</div>'+tnSelHtml('data-tnx="1"',0,nx)+'<div class="vs">versus</div><div class="tl">Team B</div>'+tnSelHtml('data-tnx="1"',1,nx)+'</div>'
     +'<div class="pick2"><button class="wbtn" data-act="tnnxfill">'+ic("wand")+'Auto fill</button></div>'
     +(idle.length?'<div class="pick2" style="margin-top:8px">'+idle.map(function(x){return'<button class="win" data-act="tnnxgo" data-k="'+esc(x)+'">Move to Court '+esc(x)+'</button>'}).join("")+'</div>':'<p class="hint" style="margin:8px 0 0">Waiting for a court to be free.</p>')+'</section>'}
-function tnLeft(){var T=TN(),pl=S.pl.filter(function(p){return !p.left&&!tnPairOf(p.id)}),h='<section class="court"><div class="chead"><b>🏆 Tournament</b><button class="ghost" data-act="tnclose">Back to normal queue</button></div>';
-  h+='<p class="hint" style="margin:6px 0">Make a pair here, or tap <b>🔒 Lock partner</b> on two players in the Waiting list. Then choose pair against pair for each court.</p>';
-  var opt=function(k){return'<select data-tmk="1" data-s="'+k+'" aria-label="'+(k?"Partner":"Player")+'"><option value="">'+(k?"Partner":"Player")+'</option>'+pl.filter(function(p){return p.id!==T.mk[1-k]}).map(function(p){return'<option value="'+p.id+'"'+(p.id===T.mk[k]?" selected":"")+'>'+esc(p.n)+' '+p.g+' '+SH[p.l]+'</option>'}).join("")+'</select>'};
-  h+='<div class="pick">'+opt(0)+'<div class="vs">and</div>'+opt(1)+'</div><button class="win" style="width:100%;margin-top:8px" data-act="tnmake">🔒 Lock as a pair</button>';
-  h+='<div class="hint" style="margin:12px 0 4px"><b>Pairs ('+T.pairs.length+')</b></div>';
-  if(!T.pairs.length)h+='<p class="hint" style="margin:0">No pairs yet.</p>';else h+=T.pairs.map(function(p){return'<div class="tnrow"><span><b>🔒 '+tnPairLbl(p)+'</b></span><button class="sm" data-act="tnunlock" data-v="'+p.id+'">Unlock</button></div>'}).join("");
-  h+='<button class="ghost" style="margin-top:10px;color:var(--danger)" data-act="tnreset">Reset tournament</button><p class="hint" style="margin:8px 0 0">Live page for players: Menu, then Start live page.</p></section>';
+function tnLeft(){var T=TN(),h='<button class="btn" style="margin:0 0 10px;width:100%" data-act="tnclose">Back to normal queue</button>';
   var out=h+labels().map(tnCourt).join("");
   T.ms.forEach(function(m){if(m.st==="r"&&!m.c)out+=tnRun(m,"Edit result")});
   return out+tnNext()}
-function tnRight(){var T=TN();if(!T.pairs.length)return"";var st=tnStand(),dn=T.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return b.dn-a.dn}),h='';
+function tnRight(){var T=TN();var st=tnStand(),dn=T.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return b.dn-a.dn}),h='';
   h+='<h2>'+ic("trophy")+'Leaderboard</h2><ol class="board">'+st.map(function(o,i){var l=i===0&&o.w>0;
     return'<li class="'+(l?"lead":"")+'"><span class="nm">'+(l?'<div style="font-weight:800;font-size:13px">Leading</div>':"")+tnPairLbl(o.p)+'<div class="em">'+emo(o)+'</div><small>GP '+o.gp+'</small></span><span class="wl"><b>'+o.w+'</b> W &nbsp;<b>'+o.x+'</b> L</span></li>'}).join("")+'</ol>';
   if(dn.length)h+='<h2>'+ic("list")+'Results</h2>'+dn.map(function(m){var A=tnPair(m.a),B=tnPair(m.b);if(!A||!B)return"";
     return'<div class="tnrow"><span><b>'+esc(tnLbl(A))+'</b> vs <b>'+esc(tnLbl(B))+'</b><br><small>'+esc(tnGs(m.g&&m.g[0]))+' &middot; won by '+esc(tnLbl(tnPair(m.win)))+'</small></span><button class="sm" data-act="tnedit" data-v="'+m.id+'">Edit</button></div>'}).join("");
-  return h}
+  if(T.pairs.length)h+='<button class="ghost" style="margin-top:10px;color:var(--danger)" data-act="tnreset">Reset tournament</button>';return h}
 function tnNewM(a,b,c,st){return{id:uid(),a:a,b:b,k:"g",st:st,c:c,t0:st==="r"?Date.now():0,g:[],sc:null,win:"",dn:0}}
 function tnCourtBusy(T,c){return T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===c})}
 function tnAct(act,t){
