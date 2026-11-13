@@ -1,5 +1,5 @@
 /* NetPlay Queue offline support. Bump VERSION when this file changes. */
-const VERSION = "np-offline-3";
+const VERSION = "np-offline-4";
 const CORE = ["./", "index.html"];
 const LIBS = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
@@ -58,6 +58,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (LIB_HOSTS.includes(url.hostname)) { event.respondWith(cacheFirst(req)); return; }
   if (url.origin !== self.location.origin) return;
+  // The live page for players is always loaded fresh and never stored with the app.
+  if (url.pathname.endsWith("/live.html")) return;
   // The app page: always try the internet first so updates show at once, and fall back to the saved copy offline.
   if (req.mode === "navigate" || url.pathname.endsWith("/") || url.pathname.endsWith("/index.html")) {
     event.respondWith(networkFirst(req, "index.html"));

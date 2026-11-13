@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0e5a3a">
+<title>NetPlay Queue Live</title>
+<style>
+:root{--bg:#f4f1ea;--card:#fff;--ink:#16231c;--mut:#5b6b62;--line:#dcd7ca;--grn:#0e5a3a;--grnink:#fff;--acc:#e8a317;--bad:#b3261e;--ok:#1b8a4b}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1a14;--card:#16251c;--ink:#eaf2ec;--mut:#9db1a5;--line:#27392e;--grn:#2f9a68;--grnink:#06150d;--acc:#f0b73a;--bad:#ff8a80;--ok:#5ad08c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--grn);color:var(--grnink);padding:14px 16px 12px}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px}
+header .wrap{padding:0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+h1{font-size:19px;margin:0;letter-spacing:.2px}
+select{font:inherit;font-size:14px;padding:4px 6px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.stat{display:flex;align-items:center;gap:8px;margin:12px 0 2px;font-size:14px;color:var(--mut)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--mut);flex:none}
+.dot.ok{background:var(--ok);animation:p 2s infinite}.dot.old{background:var(--acc)}.dot.bad{background:var(--bad)}
+@keyframes p{50%{opacity:.35}}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin:22px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.ch{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--mut);margin-bottom:6px}
+.ch b{color:var(--ink);font-size:15px}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.vs .t{font-weight:650;font-size:16px}.vs .t div{padding:1px 0}
+.vs .x{color:var(--mut);font-size:13px;font-weight:700}
+.vs .t:last-child{text-align:end}
+.nx{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-weight:600;font-size:15px}
+.nxn{margin-bottom:8px}.nxn small{display:block;color:var(--mut);margin-bottom:4px}
+ol{list-style:none;margin:0;padding:0}
+ol li{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line)}
+ol li:last-child{border-bottom:0}
+.pos{width:26px;height:26px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+li:nth-child(1) .pos{background:var(--acc);color:#1a1200}
+.nm{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wl{font-size:14px;color:var(--mut);white-space:nowrap}.wl b{color:var(--ink)}
+.empty{color:var(--mut);padding:6px 2px}
+.msg{margin:30px 0;text-align:center;color:var(--mut)}
+footer{text-align:center;color:var(--mut);font-size:12px;padding:20px 16px 30px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1 id="ttl">NetPlay Queue</h1>
+<select id="lang" aria-label="Language"><option value="en">English</option><option value="ar">العربية</option><option value="fil">Filipino</option><option value="hi">हिन्दी</option></select></div></header>
+<main class="wrap">
+<div class="stat"><span class="dot" id="dot"></span><span id="st"></span></div>
+<div id="out"></div>
+</main>
+<footer id="ft"></footer>
+<script>
+var DB="https://netplayqueue-e959e-default-rtdb.asia-southeast1.firebasedatabase.app";
+var POLL=5000,OLD=120000;
+var T={
+en:{ttl:"NetPlay Queue Live",play:"Playing now",next:"Next up",rank:"Ranking",court:"Court",none:"No games are being played right now.",nonext:"Nobody is lined up yet.",norank:"The ranking appears after the first game.",live:"Live. Updated",ago:"s ago",agom:"min ago",wait:"Loading...",gone:"This live page is not available. Ask the organizer for a new link.",quiet:"No update for a while. The organizer may be offline.",offline:"No internet. Trying again...",min:"min",w:"W",l:"L",gp:"games",ft:"Updates by themselves. You do not need to refresh.",bad:"Badminton",pick:"Pickleball"},
+ar:{ttl:"NetPlay Queue مباشر",play:"يلعبون الآن",next:"التالي",rank:"الترتيب",court:"ملعب",none:"لا توجد مباريات الآن.",nonext:"لا أحد في الانتظار بعد.",norank:"يظهر الترتيب بعد المباراة الأولى.",live:"مباشر. آخر تحديث منذ",ago:"ث",agom:"د",wait:"جارٍ التحميل...",gone:"هذه الصفحة غير متاحة. اطلب رابطًا جديدًا من المنظم.",quiet:"لا تحديث منذ فترة. قد يكون المنظم غير متصل.",offline:"لا يوجد إنترنت. تتم إعادة المحاولة...",min:"د",w:"ف",l:"خ",gp:"مباريات",ft:"يتحدث تلقائيًا. لا حاجة لتحديث الصفحة.",bad:"ريشة طائرة",pick:"بيكل بول"},
+fil:{ttl:"NetPlay Queue Live",play:"Naglalaro ngayon",next:"Susunod",rank:"Ranking",court:"Court",none:"Walang laro ngayon.",nonext:"Wala pang naka-pila.",norank:"Lalabas ang ranking pagkatapos ng unang laro.",live:"Live. Na-update",ago:"s ang nakalipas",agom:"min ang nakalipas",wait:"Naglo-load...",gone:"Hindi available ang live page na ito. Humingi ng bagong link sa organizer.",quiet:"Matagal nang walang update. Maaaring offline ang organizer.",offline:"Walang internet. Sinusubukan ulit...",min:"min",w:"P",l:"T",gp:"laro",ft:"Kusang nag-a-update. Hindi mo kailangang mag-refresh.",bad:"Badminton",pick:"Pickleball"},
+hi:{ttl:"NetPlay Queue लाइव",play:"अभी खेल रहे हैं",next:"अगले",rank:"रैंकिंग",court:"कोर्ट",none:"अभी कोई खेल नहीं चल रहा।",nonext:"अभी कोई कतार में नहीं है।",norank:"पहले खेल के बाद रैंकिंग दिखेगी।",live:"लाइव। अपडेट",ago:"से पहले (सेकंड)",agom:"मिनट पहले",wait:"लोड हो रहा है...",gone:"यह लाइव पेज उपलब्ध नहीं है। आयोजक से नया लिंक माँगें।",quiet:"काफ़ी देर से अपडेट नहीं आया। आयोजक ऑफ़लाइन हो सकता है।",offline:"इंटरनेट नहीं है। फिर कोशिश हो रही है...",min:"मि.",w:"जी",l:"हा",gp:"खेल",ft:"अपने आप अपडेट होता है। रिफ़्रेश करने की ज़रूरत नहीं।",bad:"बैडमिंटन",pick:"पिकलबॉल"}
+};
+var q=new URLSearchParams(location.search),code=(q.get("c")||"").replace(/[^a-z0-9]/gi,"").toLowerCase(),L=q.get("l");
+try{if(!L)L=localStorage.getItem("np-live-lang")}catch(e){}
+if(!L||!T[L]){var nl=(navigator.language||"en").slice(0,2);L=nl==="ar"?"ar":nl==="hi"?"hi":(nl==="fi"||nl==="tl")?"fil":"en"}
+var D=null,lastOk=0,state="wait",timer=0;
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function tx(){return T[L]||T.en}
+function setLang(l){L=T[l]?l:"en";try{localStorage.setItem("np-live-lang",L)}catch(e){}document.documentElement.lang=L==="fil"?"fil":L;document.documentElement.dir=L==="ar"?"rtl":"ltr";$("lang").value=L;$("ft").textContent=tx().ft;draw()}
+function agoTxt(ms){var s=Math.max(0,Math.round(ms/1000)),t=tx();return s<60?s+" "+t.ago:Math.round(s/60)+" "+t.agom}
+function arr(x){return Array.isArray(x)?x:(x&&typeof x==="object"?Object.keys(x).map(function(k){return x[k]}):[])}
+function draw(){
+  var t=tx(),dot=$("dot"),st=$("st"),out=$("out");document.title=t.ttl;$("ttl").textContent=t.ttl;
+  if(state==="gone"){dot.className="dot bad";st.textContent="";out.innerHTML='<p class="msg">'+esc(t.gone)+'</p>';return}
+  if(!D){dot.className="dot";st.textContent=state==="offline"?t.offline:t.wait;out.innerHTML="";return}
+  var age=Date.now()-(+D.t||lastOk);
+  if(state==="offline"){dot.className="dot old";st.textContent=t.offline}
+  else if(age>OLD){dot.className="dot old";st.textContent=t.quiet+" ("+agoTxt(age)+")"}
+  else{dot.className="dot ok";st.textContent=t.live+" "+agoTxt(age)}
+  var h="",c=arr(D.courts),n=arr(D.next),r=arr(D.rk);
+  h+='<h2>'+esc(t.play)+(D.sp&&t[D.sp]?' · '+esc(t[D.sp]):'')+'</h2>';
+  if(!c.length)h+='<div class="card empty">'+esc(t.none)+'</div>';
+  c.forEach(function(x){var mins=(x.el!=null)?Math.max(0,Math.floor(((+x.el||0)+Math.max(0,Date.now()-(+D.t||lastOk)))/60000)):null;
+    h+='<div class="card"><div class="ch"><b>'+esc(t.court)+' '+esc(x.n)+'</b><span>'+esc(x.cat||"")+(mins!=null?' · '+mins+' '+esc(t.min):'')+'</span></div><div class="vs"><div class="t">'+arr(x.a).map(function(p){return'<div>'+esc(p)+'</div>'}).join("")+'</div><div class="x">VS</div><div class="t">'+arr(x.b).map(function(p){return'<div>'+esc(p)+'</div>'}).join("")+'</div></div></div>'});
+  h+='<h2>'+esc(t.next)+'</h2>';
+  if(!n.length)h+='<div class="card empty">'+esc(t.nonext)+'</div>';
+  else h+='<div class="card">'+n.map(function(g,i){return'<div class="nxn">'+(n.length>1?'<small>#'+(i+1)+'</small>':'')+'<div class="nx">'+arr(g).map(function(p){return'<span class="chip">'+esc(p)+'</span>'}).join("")+'</div></div>'}).join("")+'</div>';
+  h+='<h2>'+esc(t.rank)+'</h2>';
+  if(!r.length)h+='<div class="card empty">'+esc(t.norank)+'</div>';
+  else h+='<div class="card" style="padding:2px 0"><ol>'+r.map(function(p,i){return'<li><span class="pos">'+(i+1)+'</span><span class="nm">'+esc(p.n)+'</span><span class="wl"><b>'+(+p.w||0)+'</b> '+esc(t.w)+' &nbsp;<b>'+(+p.x||0)+'</b> '+esc(t.l)+' &nbsp;·&nbsp; '+(+p.p||0)+' '+esc(t.gp)+'</span></li>'}).join("")+'</ol></div>';
+  out.innerHTML=h}
+async function poll(){
+  clearTimeout(timer);
+  if(!code||!DB){state="gone";draw();return}
+  if(!document.hidden){
+    try{var r=await fetch(DB.replace(/\/+$/,"")+"/s/"+code+".json?t="+Date.now(),{cache:"no-store"});
+      if(!r.ok)throw new Error(r.status);var j=await r.json();
+      if(j===null){state="gone";D=null}else{D=j;state="ok";lastOk=Date.now()}}
+    catch(e){state=D?"offline":"offline"}
+    draw()}
+  timer=setTimeout(poll,POLL)}
+$("lang").onchange=function(){setLang(this.value)};
+document.addEventListener("visibilitychange",function(){if(!document.hidden)poll()});
+window.addEventListener("online",poll);
+setInterval(function(){if(D&&state!=="gone")draw()},1000);
+setLang(L);poll();
+</script>
+</body>
+</html>

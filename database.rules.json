@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "s": {
+      "$code": {
+        ".read": true,
+        ".write": "auth != null && (!data.exists() || data.child('o').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['o','t']) && newData.child('o').val() === auth.uid && $code.length >= 10 && $code.length <= 40"
+      }
+    }
+  }
+}
