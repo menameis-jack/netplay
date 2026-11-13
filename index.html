@@ -580,7 +580,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=128,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=129,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -612,7 +612,7 @@ function liveSnap(){
   S.courts.forEach(function(c,i){if(!c.run)return;var ct=CATS.filter(function(x){return x[0]===c.cat})[0];
     courts.push({n:L[i]||String(i+1),cat:ct?ct[1]:"",a:c.run.t[0].map(nm).filter(Boolean),b:c.run.t[1].map(nm).filter(Boolean),t0:c.run.t0||0})});
   var next=nxl().map(function(c){return c.sel.map(nm).filter(Boolean)}).filter(function(a){return a.length});
-  var rk=S.pl.slice().sort(function(a,b){return b.w-a.w||a.x-b.x||b.p-a.p||a.n.localeCompare(b.n)}).filter(function(p){return p.p}).slice(0,40).map(function(p){return{n:p.n,w:p.w,x:p.x,p:p.p}});
+  var rk=S.pl.slice().sort(function(a,b){return b.w-a.w||a.x-b.x||b.p-a.p||a.n.localeCompare(b.n)}).filter(function(p){return p.p}).slice(0,40).map(function(p){return{n:p.n,l:SH[p.l]||"",w:p.w,x:p.x,p:p.p}});
   return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",courts:courts,next:next,rk:rk}}
 var LIVEH="",LIVETM=0,LIVEBUSY=false;
 function liveSoon(){clearTimeout(LIVETM);LIVETM=setTimeout(function(){livePush(false)},1500)}

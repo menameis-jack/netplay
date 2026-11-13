@@ -37,6 +37,7 @@ ol li:last-child{border-bottom:0}
 .pos{width:26px;height:26px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
 li:nth-child(1) .pos{background:var(--acc);color:#1a1200}
 .nm{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.lvl{display:inline-block;min-width:20px;text-align:center;font-size:12px;font-weight:700;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-inline-start:4px}
 .wl{font-size:14px;color:var(--mut);white-space:nowrap}.wl b{color:var(--ink)}
 .empty{color:var(--mut);padding:6px 2px}
 .gpd{font-size:13px;color:var(--mut);margin:-4px 2px 8px}
@@ -91,7 +92,7 @@ function draw(){
   else h+='<div class="card">'+n.map(function(g,i){return'<div class="nxn">'+(n.length>1?'<small>#'+(i+1)+'</small>':'')+'<div class="nx">'+arr(g).map(function(p){return'<span class="chip">'+esc(p)+'</span>'}).join("")+'</div></div>'}).join("")+'</div>';
   h+='<h2>'+esc(t.rank)+'</h2><div class="gpd">'+esc(t.gpd)+'</div>';
   if(!r.length)h+='<div class="card empty">'+esc(t.norank)+'</div>';
-  else h+='<div class="card" style="padding:2px 0"><ol>'+r.map(function(p,i){return'<li><span class="pos">'+(i+1)+'</span><span class="nm">'+esc(p.n)+'</span><span class="wl"><b>'+(+p.w||0)+'</b> '+esc(t.w)+' &nbsp;<b>'+(+p.x||0)+'</b> '+esc(t.l)+' &nbsp;·&nbsp; <b>'+(+p.p||0)+'</b> '+esc(t.gp)+'</span></li>'}).join("")+'</ol></div>';
+  else h+='<div class="card" style="padding:2px 0"><ol>'+r.map(function(p,i){return'<li><span class="pos">'+(i+1)+'</span><span class="nm">'+esc(p.n)+(p.l?' <span class="lvl">'+esc(p.l)+'</span>':'')+'</span><span class="wl"><b>'+(+p.w||0)+'</b> '+esc(t.w)+' &nbsp;<b>'+(+p.x||0)+'</b> '+esc(t.l)+' &nbsp;·&nbsp; <b>'+(+p.p||0)+'</b> '+esc(t.gp)+'</span></li>'}).join("")+'</ol></div>';
   out.innerHTML=h}
 
 var DEMO=null;
@@ -110,7 +111,7 @@ function demoStep(){
     win.forEach(function(n){DEMO.P[n].w++;DEMO.P[n].p++});lose.forEach(function(n){DEMO.P[n].x++;DEMO.P[n].p++});
     DEMO.q=DEMO.q.concat(c.a,c.b);var nx=DEMO.q.splice(0,4);
     c.a=nx.slice(0,2);c.b=nx.slice(2,4);c.t0=now;c.end=now+20000+Math.random()*25000;c.cat=cats[Math.floor(Math.random()*cats.length)]});
-  var rk=Object.keys(DEMO.P).map(function(k){return DEMO.P[k]}).filter(function(p){return p.p>0}).sort(function(a,b){return b.w-a.w||a.x-b.x||b.p-a.p||a.n.localeCompare(b.n)}).slice(0,12);
+  var rk=Object.keys(DEMO.P).map(function(k){var o=DEMO.P[k];o.l=o.l||["I","A","B","I","O"][o.n.length%5];return o}).filter(function(p){return p.p>0}).sort(function(a,b){return b.w-a.w||a.x-b.x||b.p-a.p||a.n.localeCompare(b.n)}).slice(0,12);
   var q=DEMO.q.slice();
   return{t:now,sp:"",courts:DEMO.cs.map(function(c){return{n:c.n,cat:c.cat,a:c.a,b:c.b,el:now-c.t0}}),next:[q.slice(0,4)],rk:rk}}
 
