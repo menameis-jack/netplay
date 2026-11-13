@@ -580,7 +580,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=130,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=131,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -605,9 +605,10 @@ async function liveAuth(){
   liveStore();return LIVE.idt}
 function liveCode(){var a=new Uint8Array(14),s="",c="abcdefghjkmnpqrstuvwxyz23456789",i;crypto.getRandomValues(a);for(i=0;i<a.length;i++)s+=c[a[i]%c.length];return s}
 function liveDemo(){try{return new URL("live.html",location.href).href.split("?")[0]+"?c=demo&l="+encodeURIComponent(LANG||"en")}catch(e){return"live.html?c=demo"}}
-function liveAge(){if(!LIVE.on)return;if(!LIVE.st){LIVE.st=Date.now();liveStore();return}if(Date.now()-LIVE.st>864e5)liveStop("The live page was removed after 24 hours. Tap Start live page to make a new one.")}
+function liveAge(){if(!LIVE.on)return;if(!LIVE.st){LIVE.st=Date.now();liveStore();return}if(Date.now()-LIVE.st>6048e5)liveStop("The live page was removed because it was not used for 7 days. Tap Start live page to make a new one.")}
 function liveUrl(){try{return new URL("live.html",location.href).href.split("?")[0]+"?c="+LIVE.code+"&l="+encodeURIComponent(LANG||"en")}catch(e){return""}}
 function liveSnap(){
+  if(S.ended)return{o:LIVE.uid,t:0,sp:sport(),gd:S.gd||"",e:1,courts:[],next:[],rk:[]};
   var L=labels(),nm=function(id){var p=P(id);return p?p.n:""},courts=[];
   S.courts.forEach(function(c,i){if(!c.run)return;var ct=CATS.filter(function(x){return x[0]===c.cat})[0];
     courts.push({n:L[i]||String(i+1),cat:ct?ct[1]:"",a:c.run.t[0].map(nm).filter(Boolean),b:c.run.t[1].map(nm).filter(Boolean),t0:c.run.t0||0})});
@@ -618,14 +619,14 @@ var LIVEH="",LIVETM=0,LIVEBUSY=false;
 function liveSoon(){clearTimeout(LIVETM);LIVETM=setTimeout(function(){livePush(false)},1500)}
 async function livePush(force){
   if(!liveOk()||!LIVE.on||!LIVE.code||LIVEBUSY)return;
-  var snap=liveSnap(),h=JSON.stringify([snap.sp,snap.gd,snap.courts,snap.next,snap.rk]);
+  var snap=liveSnap(),h=JSON.stringify([snap.sp,snap.gd,snap.e,snap.courts,snap.next,snap.rk]);
   if(!force&&h===LIVEH&&Date.now()-LIVET<9e4)return;
   LIVEBUSY=true;
   try{
     for(var k=0;k<2;k++){
       var tok=await liveAuth();snap.o=LIVE.uid;snap.t={".sv":"timestamp"};var nowm=Date.now();snap.courts=snap.courts.map(function(c){return{n:c.n,cat:c.cat,a:c.a,b:c.b,el:c.t0?Math.max(0,nowm-c.t0):0}});
       var r=await fetch(LV_CFG.db.replace(/\/+$/,"")+"/s/"+LIVE.code+".json?auth="+encodeURIComponent(tok),{method:"PUT",body:JSON.stringify(snap)});
-      if(r.ok){LIVEH=h;LIVET=Date.now();LIVEL=tmStr(Date.now()).slice(0,5);LIVEX="";LIVED="";break}
+      if(r.ok){LIVEH=h;LIVET=Date.now();if(LIVE.st&&Date.now()-LIVE.st>36e5){LIVE.st=Date.now();liveStore()}LIVEL=tmStr(Date.now()).slice(0,5);LIVEX="";LIVED="";break}
       if(r.status===401&&k===0){LIVE.idt="";LIVE.exp=0;continue}
       var bt="";try{bt=(await r.text()).slice(0,120)}catch(x){}LIVED=liveHint(r.status+" "+bt);LIVEX=r.status===401||r.status===403?"This live page belongs to another device. Stop it and start a new one.":"Could not update the live page. Will try again.";break}
   }catch(e){LIVEX="No internet. The live page will update when you are online again."}
@@ -1060,7 +1061,7 @@ function selHtml(c,ci,k){
   var av=S.q.map(P).filter(function(p){return !p.rest}).concat(c.keep.map(P)).filter(function(p,i,a){return p&&tk.indexOf(p.id)<0&&a.indexOf(p)===i}).sort(function(a,b){return(S.ws||"az")==="queue"?0:byName(a,b)});
   if(cur&&P(cur)&&!av.some(function(p){return p.id===cur}))av.push(P(cur));
   return'<select data-f="sel" data-c="'+ci+'" data-s="'+k+'" aria-label="'+SL[k]+'"><option value="">'+SL[k]+'</option>'+av.map(function(p){
-    return'<option value="'+p.id+'"'+(p.id===cur?" selected":"")+'>'+esc(p.n)+' '+p.g+' '+(p.l===3?"Open":SH[p.l])+'</option>'}).join("")+'</select>';
+    return'<option value="'+p.id+'"'+(p.id===cur?" selected":"")+'>'+esc(p.n)+' '+p.g+' '+SH[p.l]+'</option>'}).join("")+'</select>';
 }
 function courtHtml(c,ci){
   var cn=CATS.filter(function(x){return x[0]===c.cat})[0][1],h;
@@ -1189,7 +1190,7 @@ document.addEventListener("click",function(e){
   else if(act==="ppdfp"||act==="ppdfq"){if(!PRO){needPro("PDF export");return}if(canEdit())exportPdf(act==="ppdfq"?"qm":"player");return}
   else if(act==="lay"){S.lay=v;if(window.applyLayout)applyLayout()}
   else if(act==="fx"){if(!PRO&&v!=="1"){needPro("Split total");return}snap();S.cf.fixed=v==="1"}
-  else if(act==="end"){if(S.courts.some(function(cc){return cc.run}))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg="";recordSession();if(LIVE.on)liveStop("The live page was removed because the game ended.")}}
+  else if(act==="end"){if(S.courts.some(function(cc){return cc.run}))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg="";recordSession();if(LIVE.on)setTimeout(function(){livePush(true)},0)}}
   else if(act==="reopen"){if(!armed("reopen",t,"Tap again to clear everything and start blank"))return;snap();resetSession()}
   else if(act==="export"){exportData();return}
   else if(act==="pagefree"){openPage("free");return}
