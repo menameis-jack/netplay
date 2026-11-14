@@ -521,7 +521,7 @@ function pdfSport(doc,x,y,z,kind){
   }catch(e){}
   try{doc.setDrawColor(0,0,0);doc.setFillColor(0,0,0)}catch(e){}
 }
-function tnRank(){try{if(!(S.tnv&&PRO)||!TN().pairs.length)return null;return tnStand().map(function(o){return{n:tnLbl(o.p),p:o.gp,w:o.w,x:o.x,left:false}})}catch(e){return null}}
+function tnRank(){try{var T0=TN();if(!PRO||!T0.pairs.length||!(S.tnv||(S.ended&&T0.ms.some(function(m){return m.st==="d"}))))return null;return tnStand().map(function(o){return{n:tnLbl(o.p),p:o.gp,w:o.w,x:o.x,left:false}})}catch(e){return null}}
 function rankTable(doc,y0,skip){
   var rows=tnRank()||S.pl.filter(function(p){return !skip||!skip[p.id]}).sort(function(a,b){return b.p-a.p||b.w-a.w||a.x-b.x||a.n.localeCompare(b.n)}),W=emoImg("\ud83c\udfc6"),L=emoImg("\ud83d\ude2d"),IS=11,GAP=3;
   doc.autoTable({startY:y0,head:[["No.",tnRank()?"Pair":"Name","GP","Wins","Losses"]],
@@ -606,7 +606,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=158,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=159,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
