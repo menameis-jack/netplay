@@ -357,7 +357,7 @@ function payFull(p,mm){var M=mm||S.lm||"Cash";
 }
 function wpBal(p){return Math.round(Math.max(0,dueOf(p)-paidOf(p))*100)/100}
 function wpPanel(p){if(!PRO||!S.wp||S.wp.id!==p.id)return"";var b=wpBal(p),pt=S.wp.m==="Partial";
-  return'<div class="pform" style="margin-top:8px"><div class="hint" style="margin:0"><b>'+(pt?"Partial payment":esc(S.wp.m==="Online Payment"?"Online":S.wp.m))+'</b> &middot; Balance '+money(b)+'</div>'
+  return'<div class="pform wpp" style="margin-top:8px"><div class="hint" style="margin:0"><b>'+(pt?"Partial payment":esc(S.wp.m==="Online Payment"?"Online":S.wp.m))+'</b> &middot; Balance '+money(b)+'</div>'
    +(pt?'<label class="hint">Paid by<select id="wpm" aria-label="Payment method">'+[["Cash","Cash"],["Online Payment","Online"],["Bank Transfer","Bank Transfer"]].map(function(o){return'<option value="'+o[0]+'"'+(S.wp.pm===o[0]?" selected":"")+'>'+o[1]+'</option>'}).join("")+'</select></label>':'')
    +'<label class="hint">Amount paid<input id="wpa" type="number" inputmode="decimal" step="0.01" min="0" placeholder="'+b.toFixed(2)+'" value="'+(S.wp.a!=null?esc(S.wp.a):(pt?"":b.toFixed(2)))+'"></label>'
    +'<div class="pick2"><button class="btn" data-act="wpok" data-v="'+p.id+'">OK</button><button class="ghost" data-act="wpcancel">Cancel</button></div></div>'}
@@ -599,7 +599,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=148,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=149,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -1417,7 +1417,11 @@ document.addEventListener("click",function(e){
 });
 document.addEventListener("change",function(e){
   if(e.target.id==="wpm"&&S.wp){S.wp.pm=e.target.value;return}
-  if(e.target.dataset&&e.target.dataset.wpay){var wv=e.target.value,wid=e.target.dataset.wpay,wy=window.scrollY;S.wp=wv&&canEdit()?{id:wid,m:wv,pm:"Cash",a:null}:null;save();render();window.scrollTo(0,wy);return}
+  if(e.target.dataset&&e.target.dataset.wpay){var wv=e.target.value,wid=e.target.dataset.wpay,wy=window.scrollY;S.wp=wv&&canEdit()?{id:wid,m:wv,pm:"Cash",a:null}:null;save();
+    var li=e.target.closest("li"),wpn=document.querySelectorAll(".wpp");wpn.forEach(function(x){x.remove()});
+    document.querySelectorAll("select[data-wpay]").forEach(function(x){if(x!==e.target)x.value=""});
+    if(S.wp&&li&&P(wid)){li.insertAdjacentHTML("beforeend",wpPanel(P(wid)))}else if(S.wp){render();window.scrollTo(0,wy)}
+    return}
   if(e.target.id==="bkfile"){backupRead(e.target.files&&e.target.files[0]);return}
   if(e.target.id==="pm"||e.target.id==="dm"){S.lm=e.target.value;save();var o=document.getElementById(e.target.id==="pm"?"dm":"pm");if(o)o.value=S.lm;return}
   var d=e.target.dataset,f=d&&d.f;if(!f||f==="sc")return;
