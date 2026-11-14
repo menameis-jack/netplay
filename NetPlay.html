@@ -600,7 +600,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=151,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=152,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -780,7 +780,8 @@ function tnRight(){var T=TN();var st=tnStand(),dn=T.ms.filter(function(m){return
   h+='<h2>'+ic("trophy")+'Leaderboard</h2><ol class="board">'+st.map(function(o,i){var l=i===0&&o.w>0;
     return'<li class="'+(l?"lead":"")+'"><span class="nm">'+(l?'<div style="font-weight:800;font-size:13px">Leading</div>':"")+tnPairLbl(o.p)+'<div class="em">'+emo(o)+'</div><small>GP '+o.gp+'</small></span><span class="wl"><b>'+o.w+'</b> W &nbsp;<b>'+o.x+'</b> L</span></li>'}).join("")+'</ol>';
   if(dn.length)h+='<h2>'+ic("list")+'Results</h2>'+dn.map(function(m){var A=tnPair(m.a),B=tnPair(m.b);if(!A||!B)return"";
-    return'<div class="tnrow"><span><b>'+esc(tnLbl(A))+'</b> vs <b>'+esc(tnLbl(B))+'</b><br><small>'+esc(tnGs(m.g&&m.g[0]))+' &middot; won by '+esc(tnLbl(tnPair(m.win)))+'</small></span><button class="sm" data-act="tnedit" data-v="'+m.id+'">Edit</button></div>'}).join("");
+    var gg=m.g&&m.g[0],hs=gg&&gg[0]!=null,wa=m.win===m.a,W=wa?A:B,L=wa?B:A,ws=hs?(wa?gg[0]:gg[1]):null,ls=hs?(wa?gg[1]:gg[0]):null;
+    return'<div class="tnrow"><span>\ud83c\udfc6 <b>'+esc(tnLbl(W))+'</b> beat \ud83d\ude2d '+esc(tnLbl(L))+'<br><small>'+(hs?esc(ws+"-"+ls)+', margin '+Math.abs(ws-ls)+' points':'No score')+(m.ms?' ('+mins(m.ms)+(m.cl?' on court '+esc(m.cl):'')+')':'')+'</small></span><button class="sm" data-act="tnedit" data-v="'+m.id+'">Edit</button></div>'}).join("");
   if(T.pairs.length)h+='<button class="ghost" style="margin-top:10px;color:var(--danger)" data-act="tnreset">Reset tournament</button>';return h}
 function tnNewM(a,b,c,st){return{id:uid(),a:a,b:b,k:"g",st:st,c:c,t0:st==="r"?Date.now():0,g:[],sc:null,win:"",dn:0}}
 function tnCourtBusy(T,c){return T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===c})}
@@ -803,7 +804,7 @@ function tnAct(act,t){
   else if(act==="tnstartg"){if(!m||m.st!=="a")return;snap();m.st="r";m.t0=Date.now();m.sc=null}
   else if(act==="tnback"){if(!m||(m.st!=="a"&&m.st!=="r"))return;snap();if(m.old){m.g=m.old.g;m.win=m.old.win;m.dn=m.old.dn;m.st="d";m.old=null;m.sc=null}else T.ms=T.ms.filter(function(x){return x!==m})}
   else if(act==="tnwin"){if(!m||m.st!=="r")return;var s0=+t.dataset.s,sc=m.sc||["",""],has=String(sc[0]).trim()!==""&&String(sc[1]).trim()!=="";
-    snap();m.g=[[has?+sc[0]:null,has?+sc[1]:null]];m.sc=null;m.win=s0===0?m.a:m.b;m.st="d";m.c="";m.old=null;m.dn=++T.seq}
+    snap();m.g=[[has?+sc[0]:null,has?+sc[1]:null]];m.sc=null;m.win=s0===0?m.a:m.b;m.st="d";m.cl=m.c;m.ms=m.t0?Date.now()-m.t0:0;m.c="";m.old=null;m.dn=++T.seq}
   else if(act==="tnedit"){if(!m||m.st!=="d")return;snap();m.old={g:m.g,win:m.win,dn:m.dn};var lg=m.g&&m.g[0];m.sc=lg&&lg[0]!=null?[String(lg[0]),String(lg[1])]:["",""];m.g=[];m.st="r";m.win="";m.c=""}
   else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();S.tn=tnNew()}
   var sy=window.scrollY,cr0=document.querySelector(".colR"),cst=cr0?cr0.scrollTop:0;save();render();window.scrollTo(0,sy);var cr1=document.querySelector(".colR");if(cr1)cr1.scrollTop=cst}
