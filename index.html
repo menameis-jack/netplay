@@ -132,6 +132,7 @@ h2{font-size:17px;margin:22px 0 8px;display:flex;align-items:center}
 .wi .l2{color:var(--mute);font-size:14px}
 .wi .l3{font-size:15px;font-weight:700}
 .wi .l4{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+.wi .l5{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .wi .l4 .sp{margin-left:auto;display:flex;gap:6px;align-items:center}
 button.chip{border:0;border-radius:99px;min-height:40px;cursor:pointer;font-weight:800;padding:6px 14px;font-size:13px}
 @media (min-width:700px){.q.wlist{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}}
@@ -355,6 +356,8 @@ function payFull(p,mm){var M=mm||S.lm||"Cash";
   if(dupe(p,b,M)){S.pmsg="A payment of this amount was just recorded.";toast(S.pmsg);return}
   snap();post({id:p.id,n:p.n,a:b,m:M,k:"Payment",by:S.org||"Organizer",r:"Paid in full"});S.pmsg="";
 }
+function payDrop(p,st){return'<select class="chip st-'+st+'" data-wpay="'+p.id+'" aria-label="Record payment for '+esc(p.n)+'"><option value="">Record payment</option>'+[["Cash","Cash"],["Online Payment","Online"],["Bank Transfer","Bank Transfer"],["Partial","Partial payment"]].map(function(o){return'<option value="'+o[0]+'"'+(S.wp&&S.wp.id===p.id&&S.wp.m===o[0]?" selected":"")+'>'+o[1]+'</option>'}).join("")+'</select>'}
+function payRow(p){if(!PRO||!canEdit())return"";var r=pr(p);return'<div class="l5"><button class="sm" data-act="pex" data-v="'+p.id+'">'+(r.ex?"Remove exemption":"Exempt")+'</button><button class="sm" data-act="rcpt" data-v="'+p.id+'">Copy receipt</button></div>'}
 function wpBal(p){return Math.round(Math.max(0,dueOf(p)-paidOf(p))*100)/100}
 function wpPanel(p){if(!PRO||!S.wp||S.wp.id!==p.id)return"";var b=wpBal(p),pt=S.wp.m==="Partial";
   return'<div class="pform wpp" style="margin-top:8px"><div class="hint" style="margin:0"><b>'+(pt?"Partial payment":esc(S.wp.m==="Online Payment"?"Online":S.wp.m))+'</b> &middot; Balance '+money(b)+'</div>'
@@ -597,7 +600,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=150,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=151,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -1248,10 +1251,10 @@ function render(){
     return'<li class="wi'+(p.rest?" rest":"")+'"><div class="l1"><span class="pos">'+(ix+1)+'.</span>'+av(p)+esc(p.n)+tnLk(p)+'</div>'
       +'<div class="l2">GP '+(p.p||0)+' &middot; '+LV[p.l]+(p.nx?' &middot; Next up':'')+'</div>'
       +'<div class="l3">\ud83c\udfc6 '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div>'
-      +'<div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp">'+(PRO?'<button class="sm" data-act="nx" data-v="'+p.id+'" aria-pressed="'+(!!p.nx)+'">'+(p.nx?"Next up":"Play next")+'</button>':'')+tnLockBtn(p)+'<button class="sm" data-act="rest" data-v="'+p.id+'">'+(p.rest?"Back":"Rest")+'</button><button class="sm" data-act="left" data-v="'+p.id+'">Left early</button><button class="x" aria-label="Remove player" data-act="del" data-v="'+p.id+'"'+(ARM.k==="del"+p.id?' style="font-size:14px;font-weight:800"':'')+'>'+(ARM.k==="del"+p.id?"Remove?":"\u00d7")+'</button></span></div>'+wpPanel(p)+'</li>'}).join("")+'</ul>'
+      +'<div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp">'+(PRO?'<button class="sm" data-act="nx" data-v="'+p.id+'" aria-pressed="'+(!!p.nx)+'">'+(p.nx?"Next up":"Play next")+'</button>':'')+tnLockBtn(p)+'<button class="sm" data-act="rest" data-v="'+p.id+'">'+(p.rest?"Back":"Rest")+'</button><button class="sm" data-act="left" data-v="'+p.id+'">Left early</button><button class="x" aria-label="Remove player" data-act="del" data-v="'+p.id+'"'+(ARM.k==="del"+p.id?' style="font-size:14px;font-weight:800"':'')+'>'+(ARM.k==="del"+p.id?"Remove?":"\u00d7")+'</button></span></div>'+payRow(p)+wpPanel(p)+'</li>'}).join("")+'</ul>'
     :'<div class="empty">'+ic(sport())+'<p class="hint">Nobody waiting. Add players below.</p></div>';
-  if(gone.length)h+='<h2>'+ic("users")+'Left early ('+gone.length+')</h2><ul class="q wlist">'+gone.map(function(p){var st=pst(p),ed=canEdit(),chip=!PRO?'':ed?'<span class="chip st-'+st+'">'+SLBL[st]+'</span>':'<span class="chip st-'+st+'">'+SLBL[st]+'</span>';
-    return'<li class="wi rest"><div class="l1">'+av(p)+esc(p.n)+tnLk(p)+'</div><div class="l2">GP '+(p.p||0)+' &middot; '+LV[p.l]+' &middot; Left early'+(p.lt?' at '+esc(p.lt):'')+'</div><div class="l3">\ud83c\udfc6 '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div><div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp"><button class="sm" data-act="left" data-v="'+p.id+'">Back</button></span></div></li>'}).join("")+'</ul><p class="hint">Players who left early stay in the ranking and payments, but are not picked by Auto fill.</p>';
+  if(gone.length)h+='<h2>'+ic("users")+'Left early ('+gone.length+')</h2><ul class="q wlist">'+gone.map(function(p){var st=pst(p),ed=canEdit(),chip=!PRO?'':ed&&st!=="paid"&&st!=="exempt"?payDrop(p,st):'<span class="chip st-'+st+'">'+SLBL[st]+'</span>';
+    return'<li class="wi rest"><div class="l1">'+av(p)+esc(p.n)+tnLk(p)+'</div><div class="l2">GP '+(p.p||0)+' &middot; '+LV[p.l]+' &middot; Left early'+(p.lt?' at '+esc(p.lt):'')+'</div><div class="l3">\ud83c\udfc6 '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div><div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp"><button class="sm" data-act="left" data-v="'+p.id+'">Back</button></span></div>'+payRow(p)+wpPanel(p)+'</li>'}).join("")+'</ul><p class="hint">Players who left early stay in the ranking and payments, but are not picked by Auto fill.</p>';
   h+=(q.length?'<button class="ghost" style="margin-top:10px;color:var(--danger)" data-act="clear">'+(ARM.k==="clear"?"Tap again to remove all "+q.length+" waiting players":"Clear waiting list")+'</button>':'');
   h+='<h2>'+ic("plus")+'Add a player</h2>'+(dis?'<p class="hint">Adding players is locked while a game is running. Finish the games first.</p>':'')+'<div class="add"><input class="full" id="nm" style="text-transform:uppercase"'+dis+' placeholder="Player name" autocomplete="off" maxlength="24" aria-label="Player name">'
     +'<label class="hint" style="margin:0;text-transform:uppercase">Gender<select style="text-transform:uppercase" data-f="ng"'+dis+' aria-label="Gender"><option value="F"'+(S.ng==="F"?" selected":"")+'>Woman</option><option value="M"'+(S.ng==="M"?" selected":"")+'>Man</option></select></label>'
@@ -1307,7 +1310,7 @@ document.addEventListener("click",function(e){
   else if(act==="wpok"){wpOk(v)}
   else if(act==="wpcancel"){S.wp=null}
   else if(act==="pfull"){if(!canEdit())return;payFull(P(v))}
-  else if(act==="pex"){if(!canEdit())return;var px=P(v),rx=pr(px);if(!rx.ex&&paidOf(px)>.005)S.pmsg="This player has payments. Reverse them first.";else{snap();rx.ex=!rx.ex;aud(px,rx.ex?"Marked exempted":"Exemption removed");S.pmsg=""}}
+  else if(act==="pex"){if(!canEdit())return;var px=P(v),rx=pr(px);if(!rx.ex&&paidOf(px)>.005){S.pmsg="This player has payments. Reverse them first in Transaction history.";toast(S.pmsg)}else{snap();rx.ex=!rx.ex;aud(px,rx.ex?"Marked exempted":"Exemption removed");S.pmsg=""}}
   else if(act==="prv"){if(!canEdit())return;S.rv=S.rv===v?null:v}
   else if(act==="prvx"){S.rv=null}
   else if(act==="prvc"){if(!canEdit())return;revTx(v)}
@@ -1397,7 +1400,7 @@ document.addEventListener("click",function(e){
     if(!n){try{document.getElementById("nm").focus({preventScroll:true})}catch(er){}return}
     n=n.replace(/\s+/g," ");
     var nmi=document.getElementById("nm"),gg=S.ng,inl=false,lvi=document.getElementById("nlv"),lvc=lvi?SH.indexOf(String(lvi.value).trim().toUpperCase()):+S.nl;
-    if(!/[,;]/.test(n)){var pr=parseBulk(n,gg,lvc<0?1:lvc);if(pr.length===1){var p0=pr[0];
+    if(!/[,;]/.test(n)){var prs=parseBulk(n,gg,lvc<0?1:lvc);if(prs.length===1){var p0=prs[0];
       if(p0.bad){var nw=document.getElementById("nmw");if(!nw&&nmi){nw=document.createElement("p");nw.id="nmw";nw.className="warn full";nw.setAttribute("role","alert");nmi.insertAdjacentElement("afterend",nw)}if(nw)nw.textContent=badMsg(p0.bad);if(nmi){nmi.style.borderColor="var(--danger)";try{nmi.focus({preventScroll:true})}catch(er){}}toast(badMsg(p0.bad));return}
       n=p0.n;if(p0.gs)gg=p0.g;if(p0.ls){lvc=p0.l;inl=true}}}
     if(!inl&&(lvc<0||(lvi&&String(lvi.value).trim().length!==1))){lvMsg(lvi);toast(LVMSG);if(lvi){try{lvi.focus({preventScroll:true})}catch(er){}}return}
