@@ -521,9 +521,10 @@ function pdfSport(doc,x,y,z,kind){
   }catch(e){}
   try{doc.setDrawColor(0,0,0);doc.setFillColor(0,0,0)}catch(e){}
 }
+function tnRank(){try{if(!(S.tnv&&PRO)||!TN().pairs.length)return null;return tnStand().map(function(o){return{n:tnLbl(o.p),p:o.gp,w:o.w,x:o.x,left:false}})}catch(e){return null}}
 function rankTable(doc,y0,skip){
-  var rows=S.pl.filter(function(p){return !skip||!skip[p.id]}).sort(function(a,b){return b.p-a.p||b.w-a.w||a.x-b.x||a.n.localeCompare(b.n)}),W=emoImg("\ud83c\udfc6"),L=emoImg("\ud83d\ude2d"),IS=11,GAP=3;
-  doc.autoTable({startY:y0,head:[["No.","Name","GP","Wins","Losses"]],
+  var rows=tnRank()||S.pl.filter(function(p){return !skip||!skip[p.id]}).sort(function(a,b){return b.p-a.p||b.w-a.w||a.x-b.x||a.n.localeCompare(b.n)}),W=emoImg("\ud83c\udfc6"),L=emoImg("\ud83d\ude2d"),IS=11,GAP=3;
+  doc.autoTable({startY:y0,head:[["No.",tnRank()?"Pair":"Name","GP","Wins","Losses"]],
     body:rows.map(function(p,i){return[i+1,p.n+(p.left?"  (LEFT EARLY)":""),p.p||0,p.w?"":"0",p.x?"":"0"]}),
     styles:{fontSize:10,cellPadding:{top:6,bottom:6,left:5,right:5},minCellHeight:24},
     columnStyles:{0:{cellWidth:34},2:{cellWidth:36},3:{cellWidth:150},4:{cellWidth:150}},
@@ -605,7 +606,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=157,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=158,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -793,7 +794,7 @@ function tnNewM(a,b,c,st){return{id:uid(),a:a,b:b,k:"g",st:st,c:c,t0:st==="r"?Da
 function tnCourtBusy(T,c){return T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===c})}
 function tnAct(act,t){
   if(act==="tnadd"){var nm=document.getElementById("nm");if(nm){nm.scrollIntoView({block:"center"});try{nm.focus()}catch(e){}}return}
-  if(act==="tnclose"){if(tnLive()){toast("A tournament game is running. Finish or cancel it first.");return}S.tnv=false;save();render();return}
+  if(act==="tnclose"){if(!S.ended){toast("The tournament is still on. Press End game first.");return}S.tnv=false;save();render();return}
   if(act==="tnopen"){if(!PRO){needPro("Tournament mode");return}S.tnv=true;save();render();window.scrollTo(0,0);return}
   if((act==="tnlock"||act==="tnunlock"||act==="tnmake")&&!PRO){needPro("Locking partners");return}
   var T=TN(),v=t.dataset.v,m=T.ms.filter(function(x){return x.id===v})[0];
@@ -1033,7 +1034,7 @@ function exportPdf(kind){
   if(qm){var rt=D.tr.filter(function(r){return !P(r[2])}),ky=function(r){return r.filter(function(x,i){return i!==0&&i!==2}).map(n2)};
     if(rt.length){var ry=head("Transactions of players no longer registered",10);doc.autoTable({startY:ry+6,head:[D.TH.filter(function(x,i){return i!==0&&i!==2})],body:rt.map(ky),styles:{fontSize:6.5}})}}
   /* 4. Games Played Ranking */
-  var ry2=head("Games Played Ranking",14),tw=typeof doc.getTextWidth==="function"?doc.getTextWidth("Games Played Ranking"):130;
+  var rtt=tnRank()?"Pair Ranking":"Games Played Ranking",ry2=head(rtt,14),tw=typeof doc.getTextWidth==="function"?doc.getTextWidth(rtt):130;
   pdfSport(doc,40+tw+10,ry2-15,20,sport());doc.setFontSize(9);
   rankTable(doc,ry2+10);
   /* 5. Recent games log */
@@ -1228,7 +1229,7 @@ function render(){
   h+='<div class="topbar"><span>Total courts: <b>'+S.nc+'</b> ('+esc(labels().join(", "))+')</span>'+(S.ended?'<span class="pill">Game ended</span>':'')+'</div>';
   h+=updNote();h+=proNote();
   if(!TV)h+='<button class="btn" style="margin:0 0 10px;width:100%" data-act="tnopen">\ud83c\udfc6 Tournament: lock partners'+(PRO?"":" (Pro)")+'</button>';
-  else{var tbz=tnLive();h+='<button class="btn" style="margin:0 0 10px;width:100%'+(tbz?';opacity:.5;cursor:not-allowed':'')+'" data-act="tnclose"'+(tbz?' disabled aria-disabled="true"':'')+'>\ud83c\udfc6 '+(tbz?'Tournament in progress. Finish or cancel the running games to go back':'Tournament is ON. Tap to go back to normal queue')+'</button>'}
+  else{var tbz=!S.ended;h+='<button class="btn" style="margin:0 0 10px;width:100%'+(tbz?';opacity:.5;cursor:not-allowed':'')+'" data-act="tnclose"'+(tbz?' disabled aria-disabled="true"':'')+'>\ud83c\udfc6 '+(tbz?'Tournament in progress. Press End game to finish it':'Tournament has ended. Tap to go back to normal queue')+'</button>'}
   h+='<details class="menu" id="menu"'+(S.mo===false?"":" open")+'><summary>'+ic("menu")+'Menu: '+dateTxt()+(S.ts||S.te?', '+tt(S.ts)+' to '+tt(S.te):'')+'</summary>'
     +'<label class="hint" style="margin:10px 0 0">Game date<input type="date" required data-f="gd" value="'+esc(S.gd)+'"></label>'
     +'<div class="add" style="margin-top:10px"><label class="hint" style="margin:0">Time to start<input type="time" data-f="ts" value="'+esc(S.ts||"")+'"></label><label class="hint" style="margin:0">Time to end<input type="time" data-f="te" value="'+esc(S.te||"")+'"></label></div>'+'<p class="hint" style="margin:6px 0 0">The game date, start time and end time must be set before a game can start.</p>'
@@ -1325,7 +1326,7 @@ document.addEventListener("click",function(e){
   else if(act==="ppdfp"||act==="ppdfq"){if(!PRO){needPro("PDF export");return}if(canEdit())exportPdf(act==="ppdfq"?"qm":"player");return}
   else if(act==="lay"){S.lay=v;if(window.applyLayout)applyLayout()}
   else if(act==="fx"){if(!PRO&&v!=="1"){needPro("Split total");return}snap();S.cf.fixed=v==="1"}
-  else if(act==="end"){if(S.courts.some(function(cc){return cc.run}))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg="";recordSession();if(LIVE.on)setTimeout(function(){livePush(true)},0)}}
+  else if(act==="end"){if(S.courts.some(function(cc){return cc.run})||(S.tnv&&PRO&&tnLive()))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg="";recordSession();if(LIVE.on)setTimeout(function(){livePush(true)},0)}}
   else if(act==="reopen"){if(!armed("reopen",t,"Tap again to clear everything and start blank"))return;snap();resetSession()}
   else if(act==="export"){exportData();return}
   else if(act==="pagefree"){openPage("free");return}
