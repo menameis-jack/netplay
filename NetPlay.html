@@ -605,7 +605,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=156,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=157,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -733,6 +733,7 @@ function tnLockBtn(p){var T=S.tn,pr=T&&T.pairs?T.pairs.filter(function(x){return
   if(sel&&sel.id===p.id)return'<button class="sm" data-act="tnlock" data-v="'+p.id+'">Cancel</button>';
   return'<button class="sm" data-act="tnlock" data-v="'+p.id+'">🔒 '+(sel?"Lock with "+esc(sel.n):"Lock partner")+'</button>'}
 function tnLk(p){try{return S.tn&&S.tn.pairs&&S.tn.pairs.some(function(x){return x.a===p.id||x.b===p.id})?" 🔒":""}catch(e){return""}}
+function tnLive(){try{return TN().ms.some(function(m){return m.st==="a"||m.st==="r"})}catch(e){return false}}
 function tnPair(id){return TN().pairs.filter(function(p){return p.id===id})[0]}
 function tnLbl(p){return p?p.an+" / "+p.bn:""}
 function tnPairOf(pid){return TN().pairs.filter(function(p){return p.a===pid||p.b===pid})[0]}
@@ -792,7 +793,7 @@ function tnNewM(a,b,c,st){return{id:uid(),a:a,b:b,k:"g",st:st,c:c,t0:st==="r"?Da
 function tnCourtBusy(T,c){return T.ms.some(function(x){return(x.st==="a"||x.st==="r")&&x.c===c})}
 function tnAct(act,t){
   if(act==="tnadd"){var nm=document.getElementById("nm");if(nm){nm.scrollIntoView({block:"center"});try{nm.focus()}catch(e){}}return}
-  if(act==="tnclose"){S.tnv=false;save();render();return}
+  if(act==="tnclose"){if(tnLive()){toast("A tournament game is running. Finish or cancel it first.");return}S.tnv=false;save();render();return}
   if(act==="tnopen"){if(!PRO){needPro("Tournament mode");return}S.tnv=true;save();render();window.scrollTo(0,0);return}
   if((act==="tnlock"||act==="tnunlock"||act==="tnmake")&&!PRO){needPro("Locking partners");return}
   var T=TN(),v=t.dataset.v,m=T.ms.filter(function(x){return x.id===v})[0];
@@ -1227,7 +1228,7 @@ function render(){
   h+='<div class="topbar"><span>Total courts: <b>'+S.nc+'</b> ('+esc(labels().join(", "))+')</span>'+(S.ended?'<span class="pill">Game ended</span>':'')+'</div>';
   h+=updNote();h+=proNote();
   if(!TV)h+='<button class="btn" style="margin:0 0 10px;width:100%" data-act="tnopen">\ud83c\udfc6 Tournament: lock partners'+(PRO?"":" (Pro)")+'</button>';
-  else h+='<button class="btn" style="margin:0 0 10px;width:100%" data-act="tnclose">\ud83c\udfc6 Tournament is ON. Tap to go back to normal queue</button>';
+  else{var tbz=tnLive();h+='<button class="btn" style="margin:0 0 10px;width:100%'+(tbz?';opacity:.5;cursor:not-allowed':'')+'" data-act="tnclose"'+(tbz?' disabled aria-disabled="true"':'')+'>\ud83c\udfc6 '+(tbz?'Tournament in progress. Finish or cancel the running games to go back':'Tournament is ON. Tap to go back to normal queue')+'</button>'}
   h+='<details class="menu" id="menu"'+(S.mo===false?"":" open")+'><summary>'+ic("menu")+'Menu: '+dateTxt()+(S.ts||S.te?', '+tt(S.ts)+' to '+tt(S.te):'')+'</summary>'
     +'<label class="hint" style="margin:10px 0 0">Game date<input type="date" required data-f="gd" value="'+esc(S.gd)+'"></label>'
     +'<div class="add" style="margin-top:10px"><label class="hint" style="margin:0">Time to start<input type="time" data-f="ts" value="'+esc(S.ts||"")+'"></label><label class="hint" style="margin:0">Time to end<input type="time" data-f="te" value="'+esc(S.te||"")+'"></label></div>'+'<p class="hint" style="margin:6px 0 0">The game date, start time and end time must be set before a game can start.</p>'
