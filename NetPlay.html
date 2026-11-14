@@ -606,7 +606,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=159,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=160,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -1014,6 +1014,7 @@ function exportPdf(kind){
   if(!(window.jspdf&&window.jspdf.jsPDF)){if(e)e.textContent="PDF tools did not load. Check your connection.";return}
   var rf0=S.rfd;S.rfd=S.gd;var D;try{D=repData()}finally{S.rfd=rf0}
   if(!qm){var exm={};S.pl.forEach(function(p){if(pst(p)==="exempt")exm[p.id]=1});D.rows=D.rows.filter(function(r){return !exm[r[0]]})}
+  else{var exq={};S.pl.forEach(function(p){if(pst(p)==="exempt")exq[p.id]=1});D.rows=D.rows.map(function(r,i){return[r,i]}).sort(function(a,b){return (exq[b[0][0]]?1:0)-(exq[a[0][0]]?1:0)||a[1]-b[1]}).map(function(x){return x[0]})}
   var doc=new window.jspdf.jsPDF({unit:"pt",format:"a4",orientation:"landscape"}),n2=function(v){return typeof v==="number"?v.toFixed(2):v},now=Date.now(),
     pw=(doc.internal&&doc.internal.pageSize&&doc.internal.pageSize.getWidth)?doc.internal.pageSize.getWidth():841.89,
     ph=(doc.internal&&doc.internal.pageSize&&doc.internal.pageSize.getHeight)?doc.internal.pageSize.getHeight():595.28;
