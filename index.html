@@ -349,12 +349,11 @@ function waitSorted(q){var k=S.ws||"az",a=q.slice();if(k==="az")a.sort(byName);e
 function byName(a,b){return a.n.localeCompare(b.n)}
 function signed(a){return(a<0?"-":"+")+money(Math.abs(a))}
 function payChip(p){var s=pst(p);return'<span class="chip st-'+s+'" style="margin-left:6px">'+SLBL[s]+'</span>'}
-function payFull(p){
+function payFull(p,mm){var M=mm||S.lm||"Cash";
   var b=Math.round(Math.max(0,dueOf(p)-paidOf(p))*100)/100;
-  if(!S.org){S.pmsg='Type your name in "Organizer name" (in the Payments section above) first, then press Paid in full again.';toast(S.pmsg);return}
-  if(b<=.005){S.pmsg="No amount due yet. Set the costs first (Court rent, Shuttlecock or a fixed amount), or type an Amount due under Record payment.";toast(S.pmsg);return}
-  if(dupe(p,b,S.lm||"Cash")){S.pmsg="A payment of this amount was just recorded.";toast(S.pmsg);return}
-  snap();post({id:p.id,n:p.n,a:b,m:S.lm||"Cash",k:"Payment",by:S.org,r:"Paid in full"});S.pmsg="";
+    if(b<=.005){S.pmsg="No amount due yet. Set the costs first (Court rent, Shuttlecock or a fixed amount), or type an Amount due under Record payment.";toast(S.pmsg);return}
+  if(dupe(p,b,M)){S.pmsg="A payment of this amount was just recorded.";toast(S.pmsg);return}
+  snap();post({id:p.id,n:p.n,a:b,m:M,k:"Payment",by:S.org||"Organizer",r:"Paid in full"});S.pmsg="";
 }
 function payForm(id){
   var p=P(id),r=pr(p),g=function(i){return document.getElementById(i).value};
@@ -455,7 +454,6 @@ function payHtml(){
   h+='<div class="pcards sm2">'+[["Partially paid",t.partial],["Exempted",t.ex],["Expected collection",money(t.exp)],["Total collected",money(t.col)],["Outstanding",money(t.out)]].map(card).join("")+'</div>';
   if(S.ppin&&!UNL)h+='<div class="pform"><label class="hint">Payments PIN<input id="pin" type="password" inputmode="numeric" autocomplete="off"></label><button class="btn" data-act="punlock">Unlock to edit</button></div>';
   else h+='<label class="hint">Organizer name (saved as "Received by")<input data-f="org" maxlength="40" value="'+esc(S.org||"")+'"></label><details style="margin:6px 0"><summary class="hint" style="cursor:pointer">Payment lock (PIN)</summary><div class="pform"><label class="hint">New PIN (leave empty to remove)<input id="pnew" type="password" inputmode="numeric" autocomplete="off"></label><button class="ghost" data-act="ppin">Save PIN</button></div></details>';
-  h+='<label class="hint">Payment method (used for Paid in full and as the form default)<select id="dm" aria-label="Payment method">'+METH.map(function(m){return'<option'+(m===(S.lm||"Cash")?" selected":"")+'>'+m+'</option>'}).join("")+'</select></label>';
   if(S.pmsg)h+='<p class="hint" style="color:var(--danger)">'+esc(S.pmsg)+'</p>';
   h+='<div class="seg fl" role="group" aria-label="Filter">'+[["all","All"],["paid","Paid"],["unpaid","Unpaid"],["partial","Partially paid"],["exempt","Exempted"]].map(function(x){return'<button data-act="pf" data-v="'+x[0]+'" aria-pressed="'+(f===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>';
   h+='<input id="psrch" type="search" placeholder="Search player name" autocomplete="off" aria-label="Search player name" value="'+esc(S.ps||"")+'" style="margin-bottom:8px"><ul class="q pl" id="paylist">'+payList()+'</ul>';
@@ -587,7 +585,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=146,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=147,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -793,7 +791,7 @@ function tnAct(act,t){
     snap();m.g=[[has?+sc[0]:null,has?+sc[1]:null]];m.sc=null;m.win=s0===0?m.a:m.b;m.st="d";m.c="";m.old=null;m.dn=++T.seq}
   else if(act==="tnedit"){if(!m||m.st!=="d")return;snap();m.old={g:m.g,win:m.win,dn:m.dn};var lg=m.g&&m.g[0];m.sc=lg&&lg[0]!=null?[String(lg[0]),String(lg[1])]:["",""];m.g=[];m.st="r";m.win="";m.c=""}
   else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();S.tn=tnNew()}
-  var sy=window.scrollY;save();render();window.scrollTo(0,sy)}
+  var sy=window.scrollY,cr0=document.querySelector(".colR"),cst=cr0?cr0.scrollTop:0;save();render();window.scrollTo(0,sy);var cr1=document.querySelector(".colR");if(cr1)cr1.scrollTop=cst}
 document.addEventListener("change",function(e){var el=e.target;if(!el||!el.dataset)return;var T,k=+el.dataset.s;
   if(el.dataset.tpick!=null){T=TN();var lb=el.dataset.tpick;T.pick[lb]=T.pick[lb]||["",""];T.pick[lb][k]=el.value}
   else if(el.dataset.tnx!=null){T=TN();T.nx[k]=el.value}
@@ -930,7 +928,7 @@ function bprevHtml(){
     return'<div class="brow" style="display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap"><span style="flex:1;min-width:90px'+(dup?";opacity:.5;text-decoration:line-through":"")+'">'+(i+1)+'. '+esc(x.n)+'</span>'+(dup?'<small>already in list</small>':'<button class="ghost" data-act="bg" data-v="'+i+'">'+(x.g==="F"?"\u2640 Female":"\u2642 Male")+'</button><button class="ghost" data-act="bl" data-v="'+i+'">'+LV[x.l]+'</button>')+'<button class="ghost" data-act="bx" data-v="'+i+'" aria-label="Remove row">\u2715</button></div>'}).join("");
   return'<div class="bprev" id="bprev"><p class="hint" style="margin:8px 0 2px"><b>Check the list.</b> Tap a gender or level to change it.</p>'+rows+'<p class="hint" style="margin:6px 0 0">'+(nb?'<b style="color:var(--danger)">'+nb+' line'+(nb===1?' has':'s have')+' a wrong level. Fix the text above and tap Preview again, or tap \u2715 to remove the row. Nothing is added until it is fixed.</b> ':'')+n+' will be added.</p></div>'}
 function nkey(n){return String(n||"").trim().replace(/\s+/g," ").toLowerCase()}
-function newPl(n,g,l){return{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),n:n,g:g,l:+l,w:0,x:0,p:0,last:null,rest:false}}
+function newPl(n,g,l){return{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),n:String(n).toUpperCase(),g:g,l:+l,w:0,x:0,p:0,last:null,rest:false}}
 function lvHi(k){var nn=document.getElementById("nlname");if(!nn)return;nn.querySelectorAll("[data-nl]").forEach(function(sp){var on=+sp.dataset.nl===k;sp.style.background=on?"var(--cork)":"";sp.style.color=on?"var(--cork-ink)":"";sp.setAttribute("aria-pressed",on)})}
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-nl]");if(!b||b.disabled)return;var k=+b.dataset.nl;S.nl=k;S.nlt=SH[k];var i=document.getElementById("nlv");if(i){i.value=SH[k];i.style.borderColor=""}var w=document.getElementById("lvw");if(w)w.remove();lvHi(k);save()});
 var LVMSG="Level must be one letter: B (Beginner), I (Intermediate), A (Advance) or O (Open).";
@@ -1234,7 +1232,7 @@ function render(){
   var q0=S.q.map(P),q=q0.filter(function(p){return !p.left}),gone=q0.filter(function(p){return p.left});
   h+='<h2>'+ic("users")+'Waiting ('+q.length+')</h2><div class="seg fl" role="group" aria-label="Arrange waiting list">'+[["az","A to Z"],["gp","Fewest games"],["lv","Level"],["queue","Queue order"]].map(function(x){return'<button data-act="ws" data-v="'+x[0]+'" aria-pressed="'+((S.ws||"az")===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>';
   h+=q.length?'<ul class="q wlist">'+waitSorted(q).map(function(p,ix){var i=q.indexOf(p),st=pst(p),ed=canEdit(),
-      chip=!PRO?'':ed?'<button class="chip st-'+st+'" data-act="pgoq" data-v="'+p.id+'" aria-label="Record payment for '+esc(p.n)+'">'+SLBL[st]+'</button>':'<span class="chip st-'+st+'">'+SLBL[st]+'</span>';
+      chip=!PRO?'':ed?(st==="paid"||st==="exempt"?'<button class="chip st-'+st+'" data-act="pgoq" data-v="'+p.id+'" aria-label="Payment details for '+esc(p.n)+'">'+SLBL[st]+'</button>':'<select class="chip st-'+st+'" data-wpay="'+p.id+'" aria-label="Record payment for '+esc(p.n)+'"><option value="">Record payment</option><option value="Cash">Cash</option><option value="Online Payment">Online</option><option value="Bank Transfer">Bank Transfer</option></select>'):'<span class="chip st-'+st+'">'+SLBL[st]+'</span>';
     return'<li class="wi'+(p.rest?" rest":"")+'"><div class="l1"><span class="pos">'+(ix+1)+'.</span>'+av(p)+esc(p.n)+tnLk(p)+'</div>'
       +'<div class="l2">GP '+(p.p||0)+' &middot; '+LV[p.l]+(p.nx?' &middot; Next up':'')+'</div>'
       +'<div class="l3">\ud83c\udfc6 '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div>'
@@ -1243,9 +1241,9 @@ function render(){
   if(gone.length)h+='<h2>'+ic("users")+'Left early ('+gone.length+')</h2><ul class="q wlist">'+gone.map(function(p){var st=pst(p),ed=canEdit(),chip=!PRO?'':ed?'<button class="chip st-'+st+'" data-act="pgoq" data-v="'+p.id+'" aria-label="Record payment for '+esc(p.n)+'">'+SLBL[st]+'</button>':'<span class="chip st-'+st+'">'+SLBL[st]+'</span>';
     return'<li class="wi rest"><div class="l1">'+av(p)+esc(p.n)+tnLk(p)+'</div><div class="l2">GP '+(p.p||0)+' &middot; '+LV[p.l]+' &middot; Left early'+(p.lt?' at '+esc(p.lt):'')+'</div><div class="l3">\ud83c\udfc6 '+p.w+' &nbsp;&nbsp;\ud83d\ude2d '+p.x+'</div><div class="l4">'+chip+'<span class="hint" style="margin:0">pays '+money(owe(p))+'</span><span class="sp"><button class="sm" data-act="left" data-v="'+p.id+'">Back</button></span></div></li>'}).join("")+'</ul><p class="hint">Players who left early stay in the ranking and payments, but are not picked by Auto fill.</p>';
   h+=(q.length?'<button class="ghost" style="margin-top:10px;color:var(--danger)" data-act="clear">'+(ARM.k==="clear"?"Tap again to remove all "+q.length+" waiting players":"Clear waiting list")+'</button>':'');
-  h+='<h2>'+ic("plus")+'Add a player</h2>'+(dis?'<p class="hint">Adding players is locked while a game is running. Finish the games first.</p>':'')+'<div class="add"><input class="full" id="nm"'+dis+' placeholder="Player name" autocomplete="off" maxlength="24" aria-label="Player name">'
-    +'<label class="hint" style="margin:0">Gender<select data-f="ng"'+dis+' aria-label="Gender"><option value="F"'+(S.ng==="F"?" selected":"")+'>Woman</option><option value="M"'+(S.ng==="M"?" selected":"")+'>Man</option></select></label>'
-    +'<label class="hint" style="margin:0">Skill level (type one letter)<input id="nlv"'+dis+' maxlength="1" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="B, I, A or O" aria-label="Skill level: B Beginner, I Intermediate, A Advance, O Open" value="'+esc(S.nlt!=null?S.nlt:SH[+S.nl||0])+'"></label>'
+  h+='<h2>'+ic("plus")+'Add a player</h2>'+(dis?'<p class="hint">Adding players is locked while a game is running. Finish the games first.</p>':'')+'<div class="add"><input class="full" id="nm" style="text-transform:uppercase"'+dis+' placeholder="Player name" autocomplete="off" maxlength="24" aria-label="Player name">'
+    +'<label class="hint" style="margin:0;text-transform:uppercase">Gender<select style="text-transform:uppercase" data-f="ng"'+dis+' aria-label="Gender"><option value="F"'+(S.ng==="F"?" selected":"")+'>Woman</option><option value="M"'+(S.ng==="M"?" selected":"")+'>Man</option></select></label>'
+    +'<label class="hint" style="margin:0">Skill level (type one letter)<input id="nlv" style="text-transform:uppercase"'+dis+' maxlength="1" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="B, I, A or O" aria-label="Skill level: B Beginner, I Intermediate, A Advance, O Open" value="'+esc(S.nlt!=null?S.nlt:SH[+S.nl||0])+'"></label>'
     +'<div class="full" id="nlname" aria-label="Skill level letters" style="display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 2px">'+[2,3,1,0].map(function(k){return'<button type="button" class="lv" data-nl="'+k+'"'+dis+' aria-pressed="'+(k===(+S.nl||0))+'" style="margin:0;font-size:13px;padding:4px 10px;min-height:34px;cursor:pointer;border:0'+(k===(+S.nl||0)?';background:var(--cork);color:var(--cork-ink)':'')+'">'+SH[k]+' - '+(k===0?"Beginner":LV[k])+'</button>'}).join("")+'</div>'
     +'<button class="btn full" data-act="add"'+dis+'>'+ic("plus")+'Add player</button></div>'
     +'<details class="more" id="morep"'+(S.bo?" open":"")+'><summary>Add several players at once</summary><textarea class="bulk" id="bulk"'+dis+' placeholder="One player per line, for example:&#10;Jack M A&#10;Maria F I&#10;Ben B" aria-label="Player names">'+esc(BULKTXT)+'</textarea><p class="hint" style="margin:4px 0 8px">After each name you can type M or F, then one letter for the level: B (Beginner), I (Intermediate), A (Advance) or O (Open). Capital or small letters both work. Anything left out uses the gender and level chosen above.</p>'+bprevHtml()+'<div class="pick2"><button class="ghost" data-act="bprev"'+dis+'>Preview</button><button class="btn" data-act="addmany"'+dis+'>'+ic("plus")+'Add all</button></div>'
@@ -1393,7 +1391,7 @@ document.addEventListener("click",function(e){
     if(S.pl.some(function(p){return nkey(p.n)===nkey(n)})){var ni=document.getElementById("nm"),dw=document.getElementById("dupw");if(!dw&&ni){dw=document.createElement("p");dw.id="dupw";dw.className="warn";dw.setAttribute("role","alert");ni.insertAdjacentElement("afterend",dw)}if(dw)dw.textContent="\u26a0 \""+n+"\" is already in the player list. Use a different name, for example add a last initial.";if(ni){ni.style.borderColor="var(--danger)";try{ni.focus({preventScroll:true})}catch(er){}}toast("Duplicate name. "+n+" is already added.");return}
     if(!PRO&&S.pl.length>=FREE_PLAYERS){needPro("More than "+FREE_PLAYERS+" players");return}
     snap();var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-    S.pl.push({id:id,n:n,g:gg,l:lvc,w:0,x:0,p:0,last:null,rest:false});S.q.push(id);
+    S.pl.push({id:id,n:String(n).toUpperCase(),g:gg,l:lvc,w:0,x:0,p:0,last:null,rest:false});S.q.push(id);
   }
   var cr0=document.querySelector(".colR"),cst=cr0?cr0.scrollTop:0,nm0=document.getElementById("nm"),ny=nm0?nm0.getBoundingClientRect().top:0,sy=window.scrollY,sel='[data-act="'+act+'"]'+(v!=null?'[data-v="'+v+'"]':'')+(t.dataset.c!=null?'[data-c="'+t.dataset.c+'"]':'');
   save();render();window.scrollTo(0,sy);if(cr0){var cr1=document.querySelector(".colR");if(cr1)cr1.scrollTop=cst}
@@ -1402,6 +1400,7 @@ document.addEventListener("click",function(e){
   if(act==="pgoq"||act==="pgo"){var fe=document.getElementById("pform");if(fe)fe.scrollIntoView({block:"center"})}
 });
 document.addEventListener("change",function(e){
+  if(e.target.dataset&&e.target.dataset.wpay){var wv=e.target.value,wp=P(e.target.dataset.wpay);if(wv&&wp&&canEdit()){var wy=window.scrollY;payFull(wp,wv);save();render();window.scrollTo(0,wy)}else{render()}return}
   if(e.target.id==="bkfile"){backupRead(e.target.files&&e.target.files[0]);return}
   if(e.target.id==="pm"||e.target.id==="dm"){S.lm=e.target.value;save();var o=document.getElementById(e.target.id==="pm"?"dm":"pm");if(o)o.value=S.lm;return}
   var d=e.target.dataset,f=d&&d.f;if(!f||f==="sc")return;
