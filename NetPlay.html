@@ -607,10 +607,11 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=162,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=163,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
-  try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
-function updNote(){ if(!UPDV||UPDH)return"";
+  try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});
+    var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV)return;if(v===UPDV){if(UPDH&&Date.now()-UPDL>6e5){UPDH=false;render()}return}UPDV=v;UPDH=false;render()}catch(e){}}
+function updNote(){ if(!UPDV||(UPDH&&Date.now()-UPDL<6e5))return"";
   return'<div class="over" id="updnote" role="status"><b><span>A new version of NetPlay Queue is ready.</span></b><small><span>Back up first, then tap Update. Your players and payments stay on this phone.</span><span style="display:block;margin-top:6px"><button class="ghost" style="padding:4px 12px" data-act="updbk">Back up now</button> <button class="btn" style="padding:4px 14px" data-act="updgo">Update</button> <button class="ghost" style="padding:4px 12px" data-act="updlater">Later</button></span></small></div>'}
 /* Live page for players (Firebase Realtime Database over REST) */
 var LV_CFG={apiKey:"AIzaSyDHNwNpiiGKFuhTha9W09hBsijeFpgVdb8",db:"https://netplayqueue-e959e-default-rtdb.asia-southeast1.firebasedatabase.app"};
@@ -735,6 +736,7 @@ function tnLockBtn(p){if(!(S.tnv&&PRO))return"";var T=S.tn,pr=T&&T.pairs?T.pairs
   if(sel&&sel.id===p.id)return'<button class="sm" data-act="tnlock" data-v="'+p.id+'">Cancel</button>';
   return'<button class="sm" data-act="tnlock" data-v="'+p.id+'">🔒 '+(sel?"Lock with "+esc(sel.n):"Lock partner")+'</button>'}
 function tnLk(p){try{return S.tn&&S.tn.pairs&&S.tn.pairs.some(function(x){return x.a===p.id||x.b===p.id})?" 🔒":""}catch(e){return""}}
+function normalOn(){try{return !S.ended&&!S.tnv&&((S.h&&S.h.length>0)||S.courts.some(function(c){return c.run}))}catch(e){return false}}
 function tnLive(){try{return TN().ms.some(function(m){return m.st==="a"||m.st==="r"})}catch(e){return false}}
 function tnPair(id){return TN().pairs.filter(function(p){return p.id===id})[0]}
 function tnLbl(p){return p?p.an+" / "+p.bn:""}
@@ -796,7 +798,7 @@ function tnCourtBusy(T,c){return T.ms.some(function(x){return(x.st==="a"||x.st==
 function tnAct(act,t){
   if(act==="tnadd"){var nm=document.getElementById("nm");if(nm){nm.scrollIntoView({block:"center"});try{nm.focus()}catch(e){}}return}
   if(act==="tnclose"){if(!S.ended){toast("The tournament is still on. Press End game first.");return}S.tnv=false;save();render();return}
-  if(act==="tnopen"){if(!PRO){needPro("Tournament mode");return}S.tnv=true;save();render();window.scrollTo(0,0);return}
+  if(act==="tnopen"){if(!PRO){needPro("Tournament mode");return}if(normalOn()){toast("A normal game is on. Press End game first to use Tournament.");return}S.tnv=true;save();render();window.scrollTo(0,0);return}
   if((act==="tnlock"||act==="tnunlock"||act==="tnmake")&&!PRO){needPro("Locking partners");return}
   var T=TN(),v=t.dataset.v,m=T.ms.filter(function(x){return x.id===v})[0];
   if(act==="tnlock"){if(tnPairOf(v))return;if(!T.sel)T.sel=v;else if(T.sel===v)T.sel="";else{var a=P(T.sel),b=P(v);if(a&&b){snap();T.pairs.push({id:uid(),a:a.id,b:b.id,an:a.n,bn:b.n})}T.sel=""}}
@@ -921,7 +923,7 @@ function moreMenu(){
    +'<div class="hint" style="margin:12px 0 4px">Colour theme'+(PRO?"":" (Pro)")+'</div>'+seg("lth",[["def","Default"],["green","Court green"],["night","Night"]],PRO?LOOK.th:"def")
    +'<div class="hint" style="margin:12px 0 4px">Winner pop-up</div>'+seg("lcel",[["1","On"],["0","Off"]],LOOK.cel?"1":"0")
    +'<div class="hint" style="margin:12px 0 4px">Smart auto fill'+(PRO?"":" (Pro)")+'</div><div class="seg" role="group"><button data-act="tsp" aria-pressed="'+(PRO&&S.sp!==false)+'">Avoid repeat partners</button><button data-act="tbl" aria-pressed="'+(PRO&&S.bl!==false)+'">Balance teams</button></div>'
-   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="ghost" data-act="tnopen">Tournament'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="rptm">Monthly report'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="rpts">Season stats'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="pagetour">Quick tour</button><button class="ghost" data-act="pageinst">Install on home screen</button><button class="ghost" data-act="pagebrowser">Browser guide</button></div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="ghost" data-act="tnopen"'+(normalOn()?' disabled aria-disabled="true"':'')+'>Tournament'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="rptm">Monthly report'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="rpts">Season stats'+(PRO?"":" (Pro)")+'</button><button class="ghost" data-act="pagetour">Quick tour</button><button class="ghost" data-act="pageinst">Install on home screen</button><button class="ghost" data-act="pagebrowser">Browser guide</button></div>'
    +'<p class="hint" style="margin:8px 0 0"><b>Always use the same browser.</b> Your players, payments and Pro unlock are saved inside this browser only.</p>'}
 function rosterGet(){try{return JSON.parse(localStorage.getItem("np-roster")||"[]")}catch(e){return[]}}
 function rosterSave(a){try{localStorage.setItem("np-roster",JSON.stringify(a))}catch(e){}}
@@ -1231,7 +1233,7 @@ function render(){
   var run=S.courts.filter(function(c){return c.run}).length,dis=run||S.ended?" disabled":"";
   h+='<div class="topbar"><span>Total courts: <b>'+S.nc+'</b> ('+esc(labels().join(", "))+')</span>'+(S.ended?'<span class="pill">Game ended</span>':'')+'</div>';
   h+=updNote();h+=proNote();
-  if(!TV)h+='<button class="btn" style="margin:0 0 10px;width:100%" data-act="tnopen">\ud83c\udfc6 Tournament: lock partners'+(PRO?"":" (Pro)")+'</button>';
+  if(!TV){var nz=normalOn();h+='<button class="btn" style="margin:0 0 10px;width:100%'+(nz?';opacity:.5;cursor:not-allowed':'')+'" data-act="tnopen"'+(nz?' disabled aria-disabled="true"':'')+'>\ud83c\udfc6 Tournament: lock partners'+(PRO?"":" (Pro)")+(nz?' (available after End game)':'')+'</button>'}
   else{var tbz=!S.ended;h+='<button class="btn" style="margin:0 0 10px;width:100%'+(tbz?';opacity:.5;cursor:not-allowed':'')+'" data-act="tnclose"'+(tbz?' disabled aria-disabled="true"':'')+'>\ud83c\udfc6 '+(tbz?'Tournament in progress. Press End game to finish it':'Tournament has ended. Tap to go back to normal queue')+'</button>'}
   h+='<details class="menu" id="menu"'+(S.mo===false?"":" open")+'><summary>'+ic("menu")+'Menu: '+dateTxt()+(S.ts||S.te?', '+tt(S.ts)+' to '+tt(S.te):'')+'</summary>'
     +'<label class="hint" style="margin:10px 0 0">Game date<input type="date" required data-f="gd" value="'+esc(S.gd)+'"></label>'
@@ -1329,7 +1331,7 @@ document.addEventListener("click",function(e){
   else if(act==="ppdfp"||act==="ppdfq"){if(!PRO){needPro("PDF export");return}if(canEdit())exportPdf(act==="ppdfq"?"qm":"player");return}
   else if(act==="lay"){S.lay=v;if(window.applyLayout)applyLayout()}
   else if(act==="fx"){if(!PRO&&v!=="1"){needPro("Split total");return}snap();S.cf.fixed=v==="1"}
-  else if(act==="end"){if(S.courts.some(function(cc){return cc.run})||(S.tnv&&PRO&&tnLive()))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg="";recordSession();if(LIVE.on)setTimeout(function(){livePush(true)},0)}}
+  else if(act==="end"){if(S.courts.some(function(cc){return cc.run})||(S.tnv&&PRO&&tnLive()))S.endmsg="Finish the running games first.";else{if(!armed("end",t,"Tap again to end the game"))return;snap();S.ended=true;S.endmsg="";recordSession();setTimeout(updFetch,0);if(LIVE.on)setTimeout(function(){livePush(true)},0)}}
   else if(act==="reopen"){if(!armed("reopen",t,"Tap again to clear everything and start blank"))return;snap();resetSession()}
   else if(act==="export"){exportData();return}
   else if(act==="pagefree"){openPage("free");return}
@@ -1339,7 +1341,7 @@ document.addEventListener("click",function(e){
   else if(act==="bksave"){backupSave();return}
   else if(act==="updbk"){backupSave();UPDB=true;toast("Backup saved. Now tap Update.");return}
   else if(act==="updgo"){updGo();return}
-  else if(act==="updlater"){UPDH=true;render();return}
+  else if(act==="updlater"){UPDH=true;UPDL=Date.now();render();return}
   else if(act==="livego"){liveStart();return}
   else if(act==="livestop"){liveStop();return}
   else if(act==="liveqr"){LIVEQR=!LIVEQR;render();return}
@@ -1467,7 +1469,7 @@ setInterval(function(){var ck=document.getElementById("clock");if(ck)ck.textCont
 (function(){var r0=render;render=function(){r0();applyLang()}})();
 applyTz();setPro();autoDayReset();render();proInit().then(revSync,revSync);
 window.addEventListener("online",function(){revSync();updFetch()});updFetch();
-document.addEventListener("visibilitychange",function(){if(!document.hidden&&Date.now()-REVT>6e5)revSync();if(!document.hidden&&Date.now()-UPDT>6e5)updFetch()});
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&Date.now()-REVT>6e5)revSync();if(!document.hidden&&Date.now()-UPDT>6e4)updFetch()});setInterval(function(){if(!document.hidden)updFetch()},3e5);
 try{if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)&&!/claude|anthropic/i.test(location.hostname)&&window.top===window.self)window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}catch(e){}
 try{if(!localStorage.getItem("np-tour")&&!window.__notour)openPage("tour")}catch(e){}
 </script>
