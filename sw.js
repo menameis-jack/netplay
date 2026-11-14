@@ -1,5 +1,5 @@
 /* NetPlay Queue offline support. Bump VERSION when this file changes. */
-const VERSION = "np-offline-4";
+const VERSION = "np-offline-5";
 const CORE = ["./", "index.html"];
 const LIBS = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
