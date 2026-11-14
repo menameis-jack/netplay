@@ -605,7 +605,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=155,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=156,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -824,7 +824,9 @@ document.addEventListener("input",function(e){var el=e.target;if(!el||!el.datase
 
 function updGo(){ if(!UPDB&&!UPDW){UPDW=true;toast("Tap Back up now first to save your data. Tap Update again to continue without a backup.");return}
   if(navigator.onLine===false){toast("You are offline. Connect to the internet, then tap Update.");return}
-  location.replace(location.pathname+"?v="+UPDV)}
+  toast("Updating...");
+  var go=function(){location.replace(location.pathname+"?v="+UPDV+"&t="+Date.now())};
+  (async function(){try{if(navigator.serviceWorker){var rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(function(r){return r.unregister()}))}if(window.caches){var ks=await caches.keys();await Promise.all(ks.map(function(k){return caches.delete(k)}))}}catch(e){}go()})()}
 function proNote(){
   var mail='<span>To renew, email your Device ID to</span> <b>'+PRO_MAIL+'</b><span style="display:block;margin-top:6px"><button class="ghost" style="padding:4px 12px" data-act="cpmail">Copy email</button></span>';
   if(LIC&&PROI&&PROI.x){var n=dayDiff(today(),PROI.x);if(n>14)return"";

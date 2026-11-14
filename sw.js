@@ -1,5 +1,5 @@
 /* NetPlay Queue offline support. Bump VERSION when this file changes. */
-const VERSION = "np-offline-5";
+const VERSION = "np-offline-6";
 const CORE = ["./", "index.html"];
 const LIBS = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
@@ -10,7 +10,7 @@ const LIB_HOSTS = ["cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstati
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(VERSION);
-    await cache.addAll(CORE);
+    await cache.addAll(CORE.map((u) => new Request(u, { cache: "reload" })));
     // The PDF tools are stored too, so PDF export works without internet. A failure here must not block the install.
     await Promise.all(LIBS.map(async (url) => {
       try {
@@ -33,7 +33,7 @@ self.addEventListener("activate", (event) => {
 async function networkFirst(request, fallbackKey) {
   const cache = await caches.open(VERSION);
   try {
-    const res = await fetch(request);
+    const res = await fetch(request.mode === "navigate" ? new Request(request.url, { cache: "no-cache" }) : request);
     if (res && res.ok) cache.put(fallbackKey || request, res.clone());
     return res;
   } catch (e) {
