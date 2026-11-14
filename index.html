@@ -605,7 +605,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=154,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
+var APPV=155,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV||v===UPDV)return;UPDV=v;UPDH=false;render()}catch(e){}}
 function updNote(){ if(!UPDV||UPDH)return"";
@@ -1226,7 +1226,6 @@ function render(){
   h+=updNote();h+=proNote();
   if(!TV)h+='<button class="btn" style="margin:0 0 10px;width:100%" data-act="tnopen">\ud83c\udfc6 Tournament: lock partners'+(PRO?"":" (Pro)")+'</button>';
   else h+='<button class="btn" style="margin:0 0 10px;width:100%" data-act="tnclose">\ud83c\udfc6 Tournament is ON. Tap to go back to normal queue</button>';
-  if(TV)h+='<button class="btn" style="margin:0 0 10px;width:100%" data-act="tnadd">\u2795 Add player</button>';
   h+='<details class="menu" id="menu"'+(S.mo===false?"":" open")+'><summary>'+ic("menu")+'Menu: '+dateTxt()+(S.ts||S.te?', '+tt(S.ts)+' to '+tt(S.te):'')+'</summary>'
     +'<label class="hint" style="margin:10px 0 0">Game date<input type="date" required data-f="gd" value="'+esc(S.gd)+'"></label>'
     +'<div class="add" style="margin-top:10px"><label class="hint" style="margin:0">Time to start<input type="time" data-f="ts" value="'+esc(S.ts||"")+'"></label><label class="hint" style="margin:0">Time to end<input type="time" data-f="te" value="'+esc(S.te||"")+'"></label></div>'+'<p class="hint" style="margin:6px 0 0">The game date, start time and end time must be set before a game can start.</p>'
