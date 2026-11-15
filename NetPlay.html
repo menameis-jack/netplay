@@ -526,15 +526,14 @@ function tnRank(){try{var T0=TN();if(!PRO||!T0.pairs.length||!(S.tnv||(S.ended&&
 function rankTable(doc,y0,skip){
   var rows=tnRank()||S.pl.filter(function(p){return !skip||!skip[p.id]}).sort(function(a,b){return b.p-a.p||b.w-a.w||a.x-b.x||a.n.localeCompare(b.n)}),W=emoImg("\ud83c\udfc6"),L=emoImg("\ud83d\ude2d"),IS=11,GAP=3;
   doc.autoTable({startY:y0,head:[["No.",tnRank()?"Pair":"Name","GP","Wins","Losses"]],
-    body:rows.map(function(p,i){return[i+1,p.n+(p.left?"  (LEFT EARLY)":""),p.p||0,p.w?"":"0",p.x?"":"0"]}),
+    body:rows.map(function(p,i){return[i+1,p.n+(p.left?"  (LEFT EARLY)":""),p.p||0,"("+(p.w||0)+")","("+(p.x||0)+")"]}),
     styles:{fontSize:10,cellPadding:{top:6,bottom:6,left:5,right:5},minCellHeight:24},
     columnStyles:{0:{cellWidth:34},2:{cellWidth:36},3:{cellWidth:150},4:{cellWidth:150}},
     didDrawCell:function(d){
       if(d.section!=="body")return;var p=rows[d.row.index],c=d.column.index;if(!p||(c!==3&&c!==4))return;
       var n=c===3?p.w:p.x,img=c===3?W:L;if(!n||!img)return;
-      var k=n>8?1:n,x=d.cell.x+5,y=d.cell.y+(d.cell.height-IS)/2,i;
+      var tw2=typeof doc.getTextWidth==="function"?doc.getTextWidth("("+n+")"):18,k=Math.min(n,8),x=d.cell.x+5+tw2+6,y=d.cell.y+(d.cell.height-IS)/2,i;
       for(i=0;i<k;i++)doc.addImage(img,"PNG",x+i*(IS+GAP),y,IS,IS);
-      if(n>8){doc.setFontSize(10);doc.setTextColor(0);doc.text("x"+n,x+IS+GAP+3,y+IS-1)}
     }})}
 var PRO=false,LIC=false,BULKTXT="",PROI=null,PUBK={"key_ops":["verify"],"ext":true,"kty":"EC","x":"qF0pY-JGSvmp0yJ80quA4KAnCxejelwjw8eSQUG9NLo","y":"0HZSW3DoPFnJHGRQIR-7NR9huUeAzKkyuemIgerGOlo","crv":"P-256"},FREE_COURTS=5,FREE_PLAYERS=99999,PROCATS=["mnu","wdu","mxu","mna","wda","mxa"],PRO_MAIL="netplayqueue@gmail.com",PRO_INFO="";
 function toast(m){var t=document.getElementById("toast");if(!t){t=document.createElement("div");t.id="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(function(){t.style.display="none"},4200)}
@@ -607,7 +606,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=164,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
+var APPV=165,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});
     var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV)return;if(v===UPDV){if(UPDH&&Date.now()-UPDL>6e5){UPDH=false;render()}return}UPDV=v;UPDH=false;render()}catch(e){}}
@@ -1031,6 +1030,8 @@ function exportPdf(kind){
   /* 1. Summary */
   var sumRows=D.sum.filter(function(r){return qm||!/^Total (Exempted|Expected Collection|Amount Collected)$/.test(r[0])}).map(function(r){return[r[0],typeof r[1]==="number"&&/Expected|Collected|Outstanding/.test(r[0])?r[1].toFixed(2):String(r[1])]});
   sumRows.unshift(["Number of Courts Rented",labels().length+" (Court "+labels().join(", ")+")"]);
+  if(fixedMode())sumRows.splice(1,0,["Fixed amount per player",(+S.cf.fx||0).toFixed(2)],["Total cost (fixed amount x players)",total().toFixed(2)]);
+  else sumRows.splice(1,0,["Shuttlecock amount",(+S.cf.sh||0).toFixed(2)],["Court rental amount",(+S.cf.ch||0).toFixed(2)],["Total (shuttlecock + court rental)",total().toFixed(2)]);
   doc.autoTable({startY:70,head:[["Summary","Value"]],body:sumRows,styles:{fontSize:8},tableWidth:300});
   /* 2. Payment method */
   doc.autoTable({head:[["Payment method","Transactions","Net amount"]],body:D.bym.map(function(r){return r.map(n2)}),styles:{fontSize:8},tableWidth:300});
@@ -1045,8 +1046,11 @@ function exportPdf(kind){
   pdfSport(doc,40+tw+10,ry2-15,20,sport());doc.setFontSize(9);
   rankTable(doc,ry2+10);
   /* 5. Recent games log */
-  var hl=(S.h||[]).slice(-300).map(function(x,i){return[i+1,unesc(x).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").replace(/\s+/g," ").trim()]});
-  if(hl.length){var ly=head("Recent games log",12);doc.autoTable({startY:ly+6,head:[["No.","Game"]],body:hl,styles:{fontSize:7}})}
+  var hl=(S.h||[]).map(function(x){return unesc(x).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").replace(/\s+/g," ").trim()});
+  try{var TT=TN();TT.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return a.dn-b.dn}).forEach(function(m){var A=tnPair(m.a),B=tnPair(m.b);if(!A||!B)return;var g=m.g&&m.g[0],hs=g&&g[0]!=null,wa=m.win===m.a,W2=wa?A:B,L2=wa?B:A;
+    hl.push("Tournament: "+tnLbl(W2)+" beat "+tnLbl(L2)+(hs?" "+(wa?g[0]:g[1])+"-"+(wa?g[1]:g[0])+", margin "+Math.abs(g[0]-g[1])+" points":"")+(m.ms?" ("+mins(m.ms)+(m.cl?" on court "+m.cl:"")+")":""))})}catch(e){}
+  hl=hl.map(function(x,i){return[i+1,x]});
+  if(hl.length){var ly=head("Recent games log ("+hl.length+" games, "+S.gd+")",12);doc.autoTable({startY:ly+6,head:[["No.","Game"]],body:hl,styles:{fontSize:7}})}
   saveFile("netplay-payments-"+(qm?"QM":"player")+"-"+(S.gd||"game")+".pdf",doc.output("blob"));
 }
 function csv(rows){return rows.map(function(r){return r.map(function(c){c=String(c==null?"":c);if(/^[=+\-@]/.test(c))c="'"+c;return/[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(",")}).join("\n")}
