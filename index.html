@@ -606,7 +606,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=168,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
+var APPV=169,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});
     var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV)return;if(v===UPDV){if(UPDH&&Date.now()-UPDL>6e5){UPDH=false;render()}return}UPDV=v;UPDH=false;render()}catch(e){}}
@@ -1038,7 +1038,7 @@ function exportPdf(kind){
   /* 2. Payment method */
   if(!(fixedMode()&&!qm))doc.autoTable({head:[["Payment method","Transactions","Net amount"]],body:D.bym.map(function(r){return r.map(n2)}),styles:{fontSize:8},tableWidth:300});
   /* 3. Players */
-  doc.autoTable({head:[qm?D.HD.slice(1,13).concat(["Level","Left early"]):D.HD.slice(1,13)],body:(function(){var no={},c=0;return D.rows.map(function(r){if(!no[r[0]])no[r[0]]=++c;var o=r.slice(1,13).map(n2);o[0]=no[r[0]]+". "+o[0];if(qm){var pp=P(r[0]);o.push(pp&&LV[pp.l]!=null?LV[pp.l]:"");o.push(pp&&pp.left?"Left"+(pp.lt?" at "+pp.lt:""):"")}return o})})(),styles:{fontSize:6.5}});
+  doc.autoTable({head:[qm?(function(){var h=D.HD.slice(1,13);h.splice(1,0,"Level");h.push("Left early");return h})():D.HD.slice(1,13)],body:(function(){var no={},c=0;return D.rows.map(function(r){if(!no[r[0]])no[r[0]]=++c;var o=r.slice(1,13).map(n2);o[0]=no[r[0]]+". "+o[0];if(qm){var pp=P(r[0]);o.splice(1,0,pp&&LV[pp.l]!=null?LV[pp.l]:"");o.push(pp&&pp.left?"Left"+(pp.lt?" at "+pp.lt:""):"")}return o})})(),styles:{fontSize:6.5}});
   if(qm){var rt=D.tr.filter(function(r){return !P(r[2])}),ky=function(r){return r.filter(function(x,i){return i!==0&&i!==2}).map(n2)};
     if(rt.length){var ry=head("Transactions of players no longer registered",10);doc.autoTable({startY:ry+6,head:[D.TH.filter(function(x,i){return i!==0&&i!==2})],body:rt.map(ky),styles:{fontSize:6.5}})}}
   /* 4. Games Played Ranking */
