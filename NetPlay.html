@@ -606,7 +606,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=166,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
+var APPV=167,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});
     var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV)return;if(v===UPDV){if(UPDH&&Date.now()-UPDL>6e5){UPDH=false;render()}return}UPDV=v;UPDH=false;render()}catch(e){}}
@@ -1032,7 +1032,7 @@ function exportPdf(kind){
   sumRows.unshift(["Number of Courts Rented",labels().length+" (Court "+labels().join(", ")+")"]);
   if(fixedMode()&&!qm)sumRows=sumRows.filter(function(r){return r[0]!=="Total Outstanding Balance"});
   if(fixedMode())sumRows.splice(1,0,["Fixed amount per player",(+S.cf.fx||0).toFixed(2)]);
-  if(fixedMode()&&qm)sumRows.splice(2,0,["Total cost (fixed amount x players)",total().toFixed(2)]);
+  if(fixedMode()&&qm)sumRows.splice(2,0,["Shuttlecock total",(+S.cf.sh||0).toFixed(2)],["Court rental total",(+S.cf.ch||0).toFixed(2)],["Total (shuttlecock + court rental)",((+S.cf.sh||0)+(+S.cf.ch||0)).toFixed(2)],["Total cost (fixed amount x players)",total().toFixed(2)]);
   if(!fixedMode())sumRows.splice(1,0,["Shuttlecock amount",(+S.cf.sh||0).toFixed(2)],["Court rental amount",(+S.cf.ch||0).toFixed(2)],["Total (shuttlecock + court rental)",total().toFixed(2)]);
   doc.autoTable({startY:70,head:[["Summary","Value"]],body:sumRows,styles:{fontSize:8},tableWidth:300});
   /* 2. Payment method */
@@ -1260,8 +1260,8 @@ function render(){
   h+='<label class="hint" for="lvl">Auto fill uses this level</label><select id="lvl" data-f="lvl"><option value="all"'+(S.lvl==="all"?" selected":"")+'>All levels</option>'+opts(LV,S.lvl)+'</select>';
   var cf=S.cf;
   h+='<h2>'+ic("coins")+'Costs</h2><div class="add"><div class="seg full" role="group" aria-label="Cost mode"><button data-act="fx" data-v="0" aria-pressed="'+(!fixedMode())+'">Split total'+(PRO?"":" (Pro)")+'</button><button data-act="fx" data-v="1" aria-pressed="'+(!!fixedMode())+'">Fixed amount</button></div>'
-    +'<label class="hint" style="margin:0">Shuttlecock total<input'+(fixedMode()?" disabled":"")+' type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="sh" value="'+esc(cf.sh)+'"></label>'
-    +'<label class="hint" style="margin:0">Court rent total<input'+(fixedMode()?" disabled":"")+' type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="ch" value="'+esc(cf.ch)+'"></label>'
+    +'<label class="hint" style="margin:0">Shuttlecock total'+(fixedMode()?' (QM PDF only)':'')+'<input type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="sh" value="'+esc(cf.sh)+'"></label>'
+    +'<label class="hint" style="margin:0">Court rent total'+(fixedMode()?' (QM PDF only)':'')+'<input type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="ch" value="'+esc(cf.ch)+'"></label>'
     +'<label class="hint" style="margin:0">Currency symbol<input data-f="cf" data-k="sym" maxlength="3" value="'+esc(cf.sym)+'"></label><label class="hint full" style="margin:0">Fixed amount per player<input'+(fixedMode()?"":" disabled")+' type="number" inputmode="decimal" min="0" step="0.01" data-f="cf" data-k="fx" value="'+esc(cf.fx||"")+'"></label>'
     +'</div>'
     +'<div class="over" style="margin-top:10px">Total '+money(total())+'<small>'+(S.pl.length?(fixedMode()?'Fixed '+money(+cf.fx||0)+' x ':'Divided by ')+S.pl.length+' players'+(fixedMode()?'':' = '+money(total()/S.pl.length)+' each'):'Add players to calculate the total.')+'</small></div>';
