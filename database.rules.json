@@ -6,6 +6,13 @@
         ".write": "auth != null && (!data.exists() || data.child('o').val() === auth.uid)",
         ".validate": "newData.hasChildren(['o','t']) && newData.child('o').val() === auth.uid && $code.length >= 10 && $code.length <= 40"
       }
+    },
+    "t": {
+      "$id": {
+        ".read": true,
+        ".write": "auth != null && (!data.exists() || data.child('o').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['o','t0']) && newData.child('o').val() === auth.uid && $id.length >= 8 && $id.length <= 9"
+      }
     }
   }
 }
