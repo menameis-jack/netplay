@@ -582,6 +582,13 @@ function trialSave(t){try{localStorage.setItem("np-trial",JSON.stringify(t))}cat
 function trialState(){var t=trialGet();if(!t)return{s:"none",n:0};var n=t.d.length;if(t.e)return{s:"ended",n:n};if(Date.now()-t.t0>30*864e5)return{s:"ended",n:n};if(n>=3&&t.d[2]!==today())return{s:"ended",n:n};if(t.mx&&Date.now()<t.mx-216e5)return{s:"ended",n:n};if(n&&today()<t.d[n-1])return{s:"ended",n:n};return{s:"on",n:n}}
 function setPro(){var t=trialGet();if(t&&(!t.mx||Date.now()>t.mx+6e4)&&trialState().s==="on"){t.mx=Date.now();trialSave(t)}PRO=LIC||(trialState().s==="on"&&!TRBAD)}
 var TRBAD=false,TRBUSY=false,TRTM=0;
+async function trialFp(){
+  try{var sc=window.screen||{},w=Math.min(sc.width||0,sc.height||0),h=Math.max(sc.width||0,sc.height||0),tz="";
+    try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||""}catch(e){}
+    var raw=[w,h,window.devicePixelRatio||1,navigator.maxTouchPoints||0,sc.colorDepth||0,tz].join("|");
+    if(window.crypto&&crypto.subtle){var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("np1|"+raw)),a=Array.from(new Uint8Array(b)).slice(0,8);return a.map(function(x){return("0"+x.toString(16)).slice(-2)}).join("")}
+    var x=5381,i;for(i=0;i<raw.length;i++)x=((x<<5)+x+raw.charCodeAt(i))>>>0;return("00000000"+x.toString(16)).slice(-8)+"00000000"
+  }catch(e){return""}}
 function trialSoon(){clearTimeout(TRTM);TRTM=setTimeout(trialSync,1500)}
 async function trialSync(){
   if(LIC||TRBUSY||!liveOk()||navigator.onLine===false)return;
@@ -597,15 +604,21 @@ async function trialSync(){
       sd.forEach(function(x){if(typeof x==="string"&&t.d.indexOf(x)<0)t.d.push(x)});
       t.d.sort();if(t.d.length>3)t.d=t.d.slice(0,3);
       if(sv.e)t.e=1}
+    var fp=await trialFp(),fb=LV_CFG.db.replace(/\/+$/,"")+"/f/"+fp,me=devId();
+    if(fp&&!(sv&&sv.t0)&&!t.e){
+      try{var r2=await fetch(fb+".json");if(r2.ok){var fo=await r2.json()||{};
+        var oth=Object.keys(fo).filter(function(k){return k!==me&&fo[k]&&fo[k].t0>Date.now()-30*864e5}).length;
+        if(oth>=3){t.e=1;t.fp=1}}}catch(e){}}
     if(trialState().s==="ended")t.e=1;
     trialSave(t);
     try{
       var tok=await liveAuth(),pr=await fetch(base+"?auth="+encodeURIComponent(tok),{method:"PUT",body:JSON.stringify({o:LIVE.uid,t0:t.t0,d:t.d,e:t.e?1:0,ls:{".sv":"timestamp"}})});
       if(pr.ok){var bk=await pr.json();if(bk&&bk.ls){TRBAD=Math.abs(bk.ls-Date.now())>864e5}}
+      if(fp&&!t.fp){try{await fetch(fb+"/"+encodeURIComponent(me)+".json?auth="+encodeURIComponent(tok),{method:"PUT",body:JSON.stringify({o:LIVE.uid,t0:t.t0})})}catch(e){}}
     }catch(e){}
   }catch(e){}
   TRBUSY=false;setPro();
-  if(was&&!PRO&&!TRBAD&&!LIC)toast("This free trial is finished. Buy Pro to keep the Pro features.");
+  if(was&&!PRO&&!TRBAD&&!LIC){var tq=trialGet();toast(tq&&tq.fp?"A free trial was already used on this kind of device. Email netplayqueue@gmail.com for a Pro code.":"This free trial is finished. Buy Pro to keep the Pro features.")};
   if(was!==PRO||TRBAD)render()}
 window.addEventListener("online",function(){trialSoon()});
 function trialCount(){var t=trialGet();if(!t||trialState().s!=="on")return;if(t.d.indexOf(today())<0&&t.d.length<3){t.d.push(today());trialSave(t);trialSoon()}setPro()}
@@ -615,7 +628,7 @@ function trialBar(){var el=document.getElementById("trialbar");if(!el)return;var
 function trialBox(){var st=trialState();
   if(st.s==="none")return'<div style="margin:0 0 10px"><button class="btn" data-act="trial">Start free trial (3 uses)</button><p class="hint" style="margin:6px 0 0">Try all Pro features for 3 uses. Play as many games as you like on one day and it counts as 1 use. Each new date you play counts as the next use, up to 3. One trial per device.</p></div>';
   if(st.s==="on")return'<p class="hint" style="margin:0 0 10px"><b>Free trial active: '+st.n+' of 3 uses.</b> Games on the same day count as one use. Each new date you play counts as the next use.</p>';
-  return'<p class="hint" style="margin:0 0 10px"><b>Your free trial has ended.</b> Buy Pro to keep the Pro features.</p>'}
+  return'<p class="hint" style="margin:0 0 10px"><b>Your free trial has ended.</b> Buy Pro to keep the Pro features.'+((trialGet()||{}).fp?' A trial was already used on this kind of device. If this is a mistake, email netplayqueue@gmail.com.':'')+'</p>'}
 async function proInit(){
   var c="";try{c=localStorage.getItem("np-pro")||""}catch(e){}
   trialSoon();
@@ -634,7 +647,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=173,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
+var APPV=174,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});
     var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV)return;if(v===UPDV){if(UPDH&&Date.now()-UPDL>6e5){UPDH=false;render()}return}UPDV=v;UPDH=false;render()}catch(e){}}
