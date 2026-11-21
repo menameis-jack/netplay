@@ -23,6 +23,15 @@
         },
         ".read": true
       }
+    },
+    "l": {
+      ".read": false,
+      "$lid": {
+        "$dev": {
+          ".write": "auth != null && (!data.exists() || data.child('o').val() === auth.uid)",
+          ".validate": "newData.hasChildren(['o','ls']) && newData.child('o').val() === auth.uid && $lid.length === 16 && $dev.length >= 8 && $dev.length <= 9"
+        }
+      }
     }
   }
 }

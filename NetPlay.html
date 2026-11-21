@@ -596,7 +596,19 @@ function downgrade(){
   }catch(e){}
   if(ch){save()}
 }
+async function licCheckin(){
+  try{
+    if(!LIC||!PROI||!liveOk()||navigator.onLine===false||!(window.crypto&&crypto.subtle))return;
+    var last=0;try{last=+localStorage.getItem("np-lc")||0}catch(e){}
+    if(Date.now()-last<432e5)return;
+    var c="";try{c=localStorage.getItem("np-pro")||""}catch(e){}if(!c)return;
+    try{localStorage.setItem("np-lc",String(Date.now()))}catch(e){}
+    var lid=await codeFp(c),tok=await liveAuth(),fs="";try{fs=localStorage.getItem("np-lf")||"";if(!fs){fs=today();localStorage.setItem("np-lf",fs)}}catch(e){}
+    var r=await fetch(LV_CFG.db.replace(/\/+$/,"")+"/l/"+lid+"/"+encodeURIComponent(devId())+".json?auth="+encodeURIComponent(tok),{method:"PUT",body:JSON.stringify({o:LIVE.uid,n:String(PROI.n||"").slice(0,60),e:String(PROI.e||"").slice(0,80),v:APPV,f:fs,sp:sport(),ls:{".sv":"timestamp"}})});
+    if(!r.ok){try{localStorage.setItem("np-lc","0")}catch(e){}}
+  }catch(e){try{localStorage.setItem("np-lc","0")}catch(x){}}}
 function proRecheck(){
+  licCheckin();
   var was=PRO;setPro();
   if(!PRO)downgrade();
   if(was&&!PRO&&!LIC){var tq=trialGet();toast(tq&&tq.fp?"A free trial was already used on this kind of device. You are now on the free version.":"Your free trial has ended. You are now on the free version. Open Menu to unlock Pro.")}
@@ -671,7 +683,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=176,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
+var APPV=177,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});
     var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV)return;if(v===UPDV){if(UPDH&&Date.now()-UPDL>6e5){UPDH=false;render()}return}UPDV=v;UPDH=false;render()}catch(e){}}
@@ -914,7 +926,7 @@ function lostHtml(){
   return'<div class="lockbox" id="lostpro" style="margin-top:10px"><b>Pro disappeared?</b><p class="hint" style="margin:0 0 8px">If you already paid and Pro is gone, you may have cleared your browser data or changed phone or browser. Your Device ID on this device now is <b>'+esc(id)+'</b>. Email it to us and we will send you a new code.</p><a class="btn" style="text-align:center;text-decoration:none" href="mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)+'">Email my Device ID</a></div>'}
 function proHtml(){var h=proHtml0();return LIC?h:h+lostHtml()}
 function proHtml0(){
-  if(LIC)return'<div class="lockbox" id="prosec"><b>NetPlay Pro is active</b><p class="hint" style="margin:0">'+esc(PROI&&PROI.n?"Licensed to "+PROI.n+". ":"")+(PROI&&PROI.x?"Valid until "+esc(PROI.x)+".":"Lifetime license.")+'</p><p class="hint" style="margin:8px 0 0"><b>'+(PROI&&PROI.d&&PROI.d.length>1?"This license is for up to "+PROI.d.length+" devices only.":"This license is for up to 2 devices.")+'</b></p><p class="hint" style="margin:8px 0 0">Your Device ID: <b id="devid" style="display:inline">'+esc(devId())+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpdev">Copy</button></p><p class="hint" style="margin:8px 0 0"><b>Changing phone or browser?</b> <span>Your Pro code is tied to this Device ID. Open the app on the new phone, copy its Device ID from the Menu and email it to the seller. Use Save backup file to move your players and payments.</span></p></div>';
+  if(LIC)return'<div class="lockbox" id="prosec"><b>NetPlay Pro is active</b><p class="hint" style="margin:0">'+esc(PROI&&PROI.n?"Licensed to "+PROI.n+". ":"")+(PROI&&PROI.x?"Valid until "+esc(PROI.x)+".":"Lifetime license.")+'</p><p class="hint" style="margin:8px 0 0">To protect your license, this device tells the seller its Device ID and app version when it is online.</p><p class="hint" style="margin:8px 0 0"><b>'+(PROI&&PROI.d&&PROI.d.length>1?"This license is for up to "+PROI.d.length+" devices only.":"This license is for up to 2 devices.")+'</b></p><p class="hint" style="margin:8px 0 0">Your Device ID: <b id="devid" style="display:inline">'+esc(devId())+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpdev">Copy</button></p><p class="hint" style="margin:8px 0 0"><b>Changing phone or browser?</b> <span>Your Pro code is tied to this Device ID. Open the app on the new phone, copy its Device ID from the Menu and email it to the seller. Use Save backup file to move your players and payments.</span></p></div>';
   return'<div class="lockbox" id="prosec"><b>NetPlay Pro</b>'+trialBox()+'<p class="hint" style="margin:0 0 8px">Free: up to '+FREE_COURTS+' courts and the Mixed (XD), Women\u2019s (WD) and Men\u2019s (MD) Doubles categories. Pro unlocks more courts, the level-specific categories (Intermediate &amp; Advance, Advanced Only), the Games played ranking, Split total, the Payments module with payment buttons, overview and transaction history, a live page for players, and PDF exports. '+esc(PRO_INFO)+'</p><div class="pick2" style="margin:0 0 10px"><a class="btn" style="text-align:center;text-decoration:none" href="'+buyLink("1 year, 2 devices","50 AED")+'">1 year<br>50 AED<br><small>Good for 2 devices</small></a><a class="btn" style="text-align:center;text-decoration:none" href="'+buyLink("Lifetime, 2 devices","80 AED")+'">Lifetime<br>80 AED<br><small>Good for 2 devices</small></a></div><p class="hint" style="margin:0 0 10px">Tap a button to email the seller. Your Device ID is added for you. You will get payment details by email, and after payment your Pro code.</p><p class="hint" style="margin:0 0 10px">Prices are in UAE dirhams (AED). If you pay from another country, your bank converts the amount. Ask by email if you would like a price in another currency.</p><p class="hint" style="margin:0 0 10px">No email app opens? Send your Device ID, the plan you want and the words "Buy Pro" to <b>'+PRO_MAIL+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpmail">Copy email</button></p><textarea class="procode" id="procode" placeholder="Paste your Pro code here" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea><button class="btn" style="margin-top:8px" data-act="proact">Unlock Pro</button><p class="hint" id="promsg" style="margin:6px 0 0"></p><p class="hint" style="margin:8px 0 0">Your Device ID: <b id="devid">'+esc(devId())+'</b> <button class="ghost" style="padding:4px 10px;margin-left:6px" data-act="cpdev">Copy</button></p><p class="hint" style="margin:6px 0 0">Your code works on this device only.</p></div>';
 }
 function needPro(what){toast(what+" is a Pro feature. Open Menu to enter your Pro code.");return false}
