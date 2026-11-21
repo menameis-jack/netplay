@@ -581,7 +581,29 @@ function trialGet(){try{return JSON.parse(localStorage.getItem("np-trial")||"nul
 function trialSave(t){try{localStorage.setItem("np-trial",JSON.stringify(t))}catch(e){}}
 function trialState(){var t=trialGet();if(!t)return{s:"none",n:0};var n=t.d.length;if(t.e)return{s:"ended",n:n};if(Date.now()-t.t0>30*864e5)return{s:"ended",n:n};if(n>=3&&t.d[2]!==today())return{s:"ended",n:n};if(t.mx&&Date.now()<t.mx-216e5)return{s:"ended",n:n};if(n&&today()<t.d[n-1])return{s:"ended",n:n};return{s:"on",n:n}}
 function setPro(){var t=trialGet();if(t&&(!t.mx||Date.now()>t.mx+6e4)&&trialState().s==="on"){t.mx=Date.now();trialSave(t)}PRO=LIC||(trialState().s==="on"&&!TRBAD)}
-var TRBAD=false,TRBUSY=false,TRTM=0;
+var TRBAD=false,TRBUSY=false,TRTM=0,PROREADY=false;
+function downgrade(){
+  if(PRO||!PROREADY)return;
+  var ch=false;
+  try{
+    if(LIVE.on&&typeof liveStop==="function"){liveStop("The live page was turned off because Pro is not active.");ch=true}
+    var L=labels();
+    if(L.length>FREE_COURTS){var n=L.length;while(n>FREE_COURTS&&S.courts[n-1]&&!(S.courts[n-1].run||S.courts[n-1].keep.length))n--;
+      if(n<L.length){S.cn=L.slice(0,n).join(", ");S.courts=S.courts.slice(0,n);S.nc=n;ch=true}}
+    S.courts.forEach(function(c){if(!c.run&&PROCATS.indexOf(c.cat)>=0){c.cat="md";ch=true}});
+    (S.nx||[]).forEach(function(c){if(!c.run&&PROCATS.indexOf(c.cat)>=0){c.cat="md";ch=true}});
+    if(S.tnv){S.tnv=false;ch=true}
+  }catch(e){}
+  if(ch){save()}
+}
+function proRecheck(){
+  var was=PRO;setPro();
+  if(!PRO)downgrade();
+  if(was&&!PRO&&!LIC){var tq=trialGet();toast(tq&&tq.fp?"A free trial was already used on this kind of device. You are now on the free version.":"Your free trial has ended. You are now on the free version. Open Menu to unlock Pro.")}
+  if(was!==PRO)render()}
+setInterval(function(){proRecheck()},3e4);
+window.addEventListener("focus",function(){proRecheck()});
+document.addEventListener("visibilitychange",function(){if(!document.hidden)proRecheck()});
 async function trialFp(){
   try{var sc=window.screen||{},w=Math.min(sc.width||0,sc.height||0),h=Math.max(sc.width||0,sc.height||0),tz="";
     try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||""}catch(e){}
@@ -592,12 +614,13 @@ async function trialFp(){
 function trialSoon(){clearTimeout(TRTM);TRTM=setTimeout(trialSync,1500)}
 async function trialSync(){
   if(LIC||TRBUSY||!liveOk()||navigator.onLine===false)return;
-  var t=trialGet();if(!t)return;
+  var t=trialGet(),nl=false;if(!t){t={t0:Date.now()*2,d:[]};nl=true}
   TRBUSY=true;var was=PRO;
   try{
     var base=LV_CFG.db.replace(/\/+$/,"")+"/t/"+encodeURIComponent(devId())+".json",r=await fetch(base);
     if(!r.ok)throw new Error("read");
     var sv=await r.json();
+    if(nl&&!(sv&&sv.t0)){TRBUSY=false;return}
     if(sv&&typeof sv==="object"){
       if(sv.t0&&sv.t0<t.t0)t.t0=sv.t0;
       var sd=Array.isArray(sv.d)?sv.d:(sv.d?Object.keys(sv.d).map(function(k){return sv.d[k]}):[]);
@@ -617,19 +640,20 @@ async function trialSync(){
       if(fp&&!t.fp){try{await fetch(fb+"/"+encodeURIComponent(me)+".json?auth="+encodeURIComponent(tok),{method:"PUT",body:JSON.stringify({o:LIVE.uid,t0:t.t0})})}catch(e){}}
     }catch(e){}
   }catch(e){}
-  TRBUSY=false;setPro();
+  TRBUSY=false;setPro();if(!PRO)downgrade();
   if(was&&!PRO&&!TRBAD&&!LIC){var tq=trialGet();toast(tq&&tq.fp?"A free trial was already used on this kind of device. Email netplayqueue@gmail.com for a Pro code.":"This free trial is finished. Buy Pro to keep the Pro features.")};
   if(was!==PRO||TRBAD)render()}
 window.addEventListener("online",function(){trialSoon()});
 function trialCount(){var t=trialGet();if(!t||trialState().s!=="on")return;if(t.d.indexOf(today())<0&&t.d.length<3){t.d.push(today());trialSave(t);trialSoon()}setPro()}
 function trialBar(){var el=document.getElementById("trialbar");if(!el)return;var st=trialState();
-  if(!LIC&&TRBAD&&st.s!=="none"){el.hidden=false;el.textContent="The date on this device looks wrong. Set the correct date and connect to the internet to continue the trial."}else if(!LIC&&st.s==="on"){el.hidden=false;el.textContent="Free trial: "+st.n+" of 3 uses. Games on the same day count as one use. Pro is unlocked."}
+  if(!LIC&&TRBAD&&st.s!=="none"){el.hidden=false;el.textContent="The date on this device looks wrong. Set the correct date and connect to the internet to continue the trial."}else if(!LIC&&st.s==="ended"){el.hidden=false;el.textContent="Your free trial has ended. You are using the free version: up to "+FREE_COURTS+" courts, and payments, tournament, live page, reports, PDF export and themes are switched off. Open Menu to unlock Pro."}else if(!LIC&&st.s==="on"){el.hidden=false;el.textContent="Free trial: "+st.n+" of 3 uses. Games on the same day count as one use. Pro is unlocked."+(st.n>=3?" This is your last trial day. The free version starts tomorrow.":"")}
   else el.hidden=true}
 function trialBox(){var st=trialState();
   if(st.s==="none")return'<div style="margin:0 0 10px"><button class="btn" data-act="trial">Start free trial (3 uses)</button><p class="hint" style="margin:6px 0 0">Try all Pro features for 3 uses. Play as many games as you like on one day and it counts as 1 use. Each new date you play counts as the next use, up to 3. One trial per device.</p></div>';
   if(st.s==="on")return'<p class="hint" style="margin:0 0 10px"><b>Free trial active: '+st.n+' of 3 uses.</b> Games on the same day count as one use. Each new date you play counts as the next use.</p>';
   return'<p class="hint" style="margin:0 0 10px"><b>Your free trial has ended.</b> Buy Pro to keep the Pro features.'+((trialGet()||{}).fp?' A trial was already used on this kind of device. If this is a mistake, email netplayqueue@gmail.com.':'')+'</p>'}
-async function proInit(){
+async function proInit(){try{await proInit0()}finally{PROREADY=true;proRecheck()}}
+async function proInit0(){
   var c="";try{c=localStorage.getItem("np-pro")||""}catch(e){}
   trialSoon();
   if(!c)return;var r=await proCheck(c);
@@ -647,7 +671,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=174,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
+var APPV=175,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});
     var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV)return;if(v===UPDV){if(UPDH&&Date.now()-UPDL>6e5){UPDH=false;render()}return}UPDV=v;UPDH=false;render()}catch(e){}}
@@ -687,6 +711,7 @@ function liveSnap(){
 var LIVEH="",LIVETM=0,LIVEBUSY=false;
 function liveSoon(){clearTimeout(LIVETM);LIVETM=setTimeout(function(){livePush(false)},1500)}
 async function livePush(force){
+  if(!PRO&&PROREADY&&LIVE.on){downgrade();return}
   if(!liveOk()||!LIVE.on||!LIVE.code||LIVEBUSY)return;
   var snap=liveSnap(),h=JSON.stringify([snap.sp,snap.gd,snap.e,snap.courts,snap.nc,snap.next,snap.rk,snap.tm,snap.pod,snap.st]);
   if(!force&&h===LIVEH&&Date.now()-LIVET<9e4)return;
