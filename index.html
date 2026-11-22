@@ -705,7 +705,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=179,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
+var APPV=180,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});
     var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV)return;if(v===UPDV){if(UPDH&&Date.now()-UPDL>6e5){UPDH=false;render()}return}UPDV=v;UPDH=false;render()}catch(e){}}
@@ -886,7 +886,11 @@ function tnNext(){var T=TN(),busy={},nx=T.nx;T.ms.forEach(function(m){if((m.st==
   return'<section class="court"><div class="chead"><b>'+sic()+'Next up</b></div><div class="pick"><div class="tl">Team A</div>'+tnSelHtml('data-tnx="1"',0,nx)+'<div class="vs">versus</div><div class="tl">Team B</div>'+tnSelHtml('data-tnx="1"',1,nx)+'</div>'
     +'<div class="pick2"><button class="wbtn" data-act="tnnxfill">'+ic("wand")+'Auto fill</button></div>'
     +(idle.length?'<div class="pick2" style="margin-top:8px">'+idle.map(function(x){return'<button class="win" data-act="tnnxgo" data-k="'+esc(x)+'">Move to Court '+esc(x)+'</button>'}).join("")+'</div>':'<p class="hint" style="margin:8px 0 0">Waiting for a court to be free.</p>')+'</section>'}
-function tnLeft(){var T=TN(),out=labels().map(tnCourt).join("");
+function tnFree(){return S.q.map(P).filter(function(p){return p&&!p.left&&!tnPairOf(p.id)})}
+function tnHelp(){var T=TN();if(T.pairs.length>=2)return"";var f=tnFree().length;
+  return'<div class="over" id="tnhelp" style="margin:0 0 10px"><b>Step 1: make pairs</b><small>The pair lists stay empty until partners are locked. In the waiting list tap <b>Lock partner</b> on a player, then tap their partner. You need at least 2 pairs to start a game.</small>'
+    +(f>=2?'<button class="btn" style="margin-top:8px;width:100%" data-act="tnautopair">Auto-pair the '+f+' waiting players</button>':'')+'</div>'}
+function tnLeft(){var T=TN(),out=tnHelp()+labels().map(tnCourt).join("");
   T.ms.forEach(function(m){if(m.st==="r"&&!m.c)out+=tnRun(m,"Edit result")});
   return out+tnNext()}
 function tnRight(){var T=TN();var st=tnStand(),dn=T.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return b.dn-a.dn}),h='';
@@ -902,13 +906,14 @@ function tnAct(act,t){
   if(act==="tnadd"){var nm=document.getElementById("nm");if(nm){nm.scrollIntoView({block:"center"});try{nm.focus()}catch(e){}}return}
   if(act==="tnclose"){if(!S.ended){toast("The tournament is still on. Press End game first.");return}S.tnv=false;save();render();return}
   if(act==="tnopen"){if(!PRO){needPro("Tournament mode");return}if(normalOn()){toast("A normal game is on. Press End game first to use Tournament.");return}S.tnv=true;save();render();window.scrollTo(0,0);return}
-  if((act==="tnlock"||act==="tnunlock"||act==="tnmake")&&!PRO){needPro("Locking partners");return}
+  if((act==="tnlock"||act==="tnunlock"||act==="tnmake"||act==="tnautopair")&&!PRO){needPro("Locking partners");return}
   var T=TN(),v=t.dataset.v,m=T.ms.filter(function(x){return x.id===v})[0];
   if(act==="tnlock"){if(tnPairOf(v))return;if(!T.sel)T.sel=v;else if(T.sel===v)T.sel="";else{var a=P(T.sel),b=P(v);if(a&&b){snap();T.pairs.push({id:uid(),a:a.id,b:b.id,an:a.n,bn:b.n})}T.sel=""}}
+  else if(act==="tnautopair"){var fr=tnFree();if(fr.length<2){toast("Not enough waiting players to pair.");return}snap();var np0=0;for(var ai=0;ai+1<fr.length;ai+=2){T.pairs.push({id:uid(),a:fr[ai].id,b:fr[ai+1].id,an:fr[ai].n,bn:fr[ai+1].n});np0++}T.sel="";toast(np0+(np0===1?" pair":" pairs")+" locked."+(fr.length%2?" One player is left without a partner.":""))}
   else if(act==="tnmake"){var x0=P(T.mk[0]),x1=P(T.mk[1]);if(!x0||!x1||x0.id===x1.id){toast("Choose two different players.");return}snap();T.pairs.push({id:uid(),a:x0.id,b:x1.id,an:x0.n,bn:x1.n});T.mk=["",""]}
   else if(act==="tnunlock"){if(T.ms.some(function(x){return x.a===v||x.b===v})){toast("This pair has games. Reset the tournament to change pairs.");return}snap();T.pairs=T.pairs.filter(function(p){return p.id!==v});T.sel=""}
-  else if(act==="tnfill"){var fl=t.dataset.k,ex=[T.nx[0],T.nx[1]];Object.keys(T.pick).forEach(function(k){if(k!==fl)ex=ex.concat(T.pick[k])});var au=tnAuto(ex);if(!au){toast("Not enough pairs waiting.");return}T.pick[fl]=au}
-  else if(act==="tnnxfill"){var ex2=[];Object.keys(T.pick).forEach(function(k){ex2=ex2.concat(T.pick[k])});var au2=tnAuto(ex2);if(!au2){toast("Not enough pairs waiting.");return}T.nx=au2}
+  else if(act==="tnfill"){var fl=t.dataset.k,ex=[T.nx[0],T.nx[1]];Object.keys(T.pick).forEach(function(k){if(k!==fl)ex=ex.concat(T.pick[k])});var au=tnAuto(ex);if(!au){toast(T.pairs.length<2?"Make pairs first: tap Lock partner in the waiting list, or use Auto-pair.":"Not enough pairs waiting.");return}T.pick[fl]=au}
+  else if(act==="tnnxfill"){var ex2=[];Object.keys(T.pick).forEach(function(k){ex2=ex2.concat(T.pick[k])});var au2=tnAuto(ex2);if(!au2){toast(T.pairs.length<2?"Make pairs first: tap Lock partner in the waiting list, or use Auto-pair.":"Not enough pairs waiting.");return}T.nx=au2}
   else if(act==="tnpickgo"||act==="tnnxgo"){var go=act==="tnpickgo",lb=t.dataset.k,pk=go?(T.pick[lb]||["",""]):T.nx,bz=tnBusy();
     if(!pk[0]||!pk[1]){toast("Choose a pair for Team A and Team B first.");return}
     if(bz[pk[0]]||bz[pk[1]]){toast("One of these pairs is already on a court.");return}
