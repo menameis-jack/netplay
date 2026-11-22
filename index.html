@@ -705,7 +705,7 @@ async function proActivate(){
 function buyLink(plan,price){var id=devId(),sub="NetPlay Queue Pro - "+plan,body="Hello, I would like to buy NetPlay Queue Pro ("+plan+", "+price+").\n\nMy Device ID: "+id+"\n\nSecond device ID (open Menu on the other device and copy it): \n\nPlease send me your payment details. Thank you!";return'mailto:'+PRO_MAIL+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body)}
 var PROX=null;
 function dayDiff(a,b){return Math.round((new Date(b+"T00:00").getTime()-new Date(a+"T00:00").getTime())/864e5)}
-var APPV=181,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
+var APPV=182,UPDV=0,UPDT=0,UPDH=false,UPDB=false,UPDW=false,UPDL=0;
 async function updFetch(){ UPDT=Date.now();if(!/^https?:$/.test(location.protocol)||typeof fetch!=="function")return;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});
     var r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;var j=await r.json(),v=+(j&&j.v);if(!isFinite(v)||v<=APPV)return;if(v===UPDV){if(UPDH&&Date.now()-UPDL>6e5){UPDH=false;render()}return}UPDV=v;UPDH=false;render()}catch(e){}}
@@ -841,7 +841,7 @@ function tnLockBtn(p){if(!(S.tnv&&PRO))return"";var T=S.tn,pr=T&&T.pairs?T.pairs
 function tnLk(p){try{return S.tn&&S.tn.pairs&&S.tn.pairs.some(function(x){return x.a===p.id||x.b===p.id})?" 🔒":""}catch(e){return""}}
 function normalOn(){try{return !S.ended&&!S.tnv&&((S.h&&S.h.length>0)||S.courts.some(function(c){return c.run}))}catch(e){return false}}
 function tnLive(){try{return TN().ms.some(function(m){return m.st==="a"||m.st==="r"})}catch(e){return false}}
-function tnStat(m,d){var wp=tnPair(m.win),lp=tnPair(m.win===m.a?m.b:m.a);if(!wp||!lp)return;function ap(pr,oth,k){[pr.a,pr.b].forEach(function(id){var p=P(id);if(!p)return;p[k]=Math.max(0,(p[k]||0)+d);p.p=Math.max(0,(p.p||0)+d);if(d>0)p.last=id===pr.a?pr.b:pr.a})}ap(wp,lp,"w");ap(lp,wp,"x")}
+function tnStat(m,d){m.sd=d>0?1:0;var wp=tnPair(m.win),lp=tnPair(m.win===m.a?m.b:m.a);if(!wp||!lp)return;function ap(pr,oth,k){[pr.a,pr.b].forEach(function(id){var p=P(id);if(!p)return;p[k]=Math.max(0,(p[k]||0)+d);p.p=Math.max(0,(p.p||0)+d);if(d>0)p.last=id===pr.a?pr.b:pr.a})}ap(wp,lp,"w");ap(lp,wp,"x")}
 function tnPair(id){return TN().pairs.filter(function(p){return p.id===id})[0]}
 function tnLbl(p){return p?p.an+" / "+p.bn:""}
 function tnPairOf(pid){return TN().pairs.filter(function(p){return p.a===pid||p.b===pid})[0]}
@@ -894,9 +894,11 @@ function tnHelp(){var T=TN();if(T.pairs.length>=2)return"";var f=tnFree().length
 function tnLeft(){var T=TN(),out=tnHelp()+labels().map(tnCourt).join("");
   T.ms.forEach(function(m){if(m.st==="r"&&!m.c)out+=tnRun(m,"Edit result")});
   return out+tnNext()}
-function tnRight(){var T=TN();var st=tnStand(),dn=T.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return b.dn-a.dn}),h='';
+function tnCatch(){try{TN().ms.forEach(function(m){if(m.st==="d"&&m.win&&!m.sd)tnStat(m,1)})}catch(e){}}
+function tnRight(){tnCatch();var T=TN();var st=tnStand(),dn=T.ms.filter(function(m){return m.st==="d"}).sort(function(a,b){return b.dn-a.dn}),h='';
   h+='<h2>'+ic("trophy")+'Leaderboard</h2><ol class="board">'+st.map(function(o,i){var l=i===0&&o.w>0;
     return'<li class="'+(l?"lead":"")+'"><span class="nm">'+(l?'<div style="font-weight:800;font-size:13px">Leading</div>':"")+tnPairLbl(o.p)+'<div class="em">'+emo(o)+'</div><small>GP '+o.gp+'</small></span><span class="wl"><b>'+o.w+'</b> W &nbsp;<b>'+o.x+'</b> L</span></li>'}).join("")+'</ol>';
+  h+='<h2>'+ic("users")+'Players ranking ('+S.pl.length+')</h2><ol class="board">'+S.pl.slice().sort(function(a,b){return b.w-a.w||a.x-b.x||b.p-a.p||a.n.localeCompare(b.n)}).map(function(p,i){return'<li><span class="nm">'+esc(p.n)+tnLk(p)+'<div class="em">'+emo(p)+'</div><small>GP '+(p.p||0)+'</small></span><span class="wl"><b>'+p.w+'</b> W &nbsp;<b>'+p.x+'</b> L</span></li>'}).join("")+'</ol>';
   if(dn.length)h+='<h2>'+ic("list")+'Results</h2>'+dn.map(function(m){var A=tnPair(m.a),B=tnPair(m.b);if(!A||!B)return"";
     var gg=m.g&&m.g[0],hs=gg&&gg[0]!=null,wa=m.win===m.a,W=wa?A:B,L=wa?B:A,ws=hs?(wa?gg[0]:gg[1]):null,ls=hs?(wa?gg[1]:gg[0]):null;
     return'<div class="tnrow"><span>\ud83c\udfc6 <b>'+esc(tnLbl(W))+'</b> beat \ud83d\ude2d '+esc(tnLbl(L))+'<br><small>'+(hs?esc(ws+"-"+ls)+', margin '+Math.abs(ws-ls)+' points':'No score')+(m.ms?' ('+mins(m.ms)+(m.cl?' on court '+esc(m.cl):'')+')':'')+'</small></span><button class="sm" data-act="tnedit" data-v="'+m.id+'">Edit</button></div>'}).join("");
@@ -924,8 +926,8 @@ function tnAct(act,t){
   else if(act==="tnback"){if(!m||(m.st!=="a"&&m.st!=="r"))return;snap();if(m.old){m.g=m.old.g;m.win=m.old.win;m.dn=m.old.dn;m.st="d";m.old=null;m.sc=null;tnStat(m,1)}else T.ms=T.ms.filter(function(x){return x!==m})}
   else if(act==="tnwin"){if(!m||m.st!=="r")return;var s0=+t.dataset.s,sc=m.sc||["",""],has=String(sc[0]).trim()!==""&&String(sc[1]).trim()!=="";
     snap();m.g=[[has?+sc[0]:null,has?+sc[1]:null]];m.sc=null;m.win=s0===0?m.a:m.b;m.st="d";tnStat(m,1);m.cl=m.c;m.ms=m.t0?Date.now()-m.t0:0;m.c="";m.old=null;m.dn=++T.seq}
-  else if(act==="tnedit"){if(!m||m.st!=="d")return;snap();tnStat(m,-1);m.old={g:m.g,win:m.win,dn:m.dn};var lg=m.g&&m.g[0];m.sc=lg&&lg[0]!=null?[String(lg[0]),String(lg[1])]:["",""];m.g=[];m.st="r";m.win="";m.c=""}
-  else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();TN().ms.forEach(function(m){if(m.st==="d"&&m.win)tnStat(m,-1)});S.tn=tnNew()}
+  else if(act==="tnedit"){if(!m||m.st!=="d")return;snap();if(m.sd)tnStat(m,-1);m.old={g:m.g,win:m.win,dn:m.dn};var lg=m.g&&m.g[0];m.sc=lg&&lg[0]!=null?[String(lg[0]),String(lg[1])]:["",""];m.g=[];m.st="r";m.win="";m.c=""}
+  else if(act==="tnreset"){if(!armed("tnreset",t,"Tap again to reset the tournament"))return;snap();TN().ms.forEach(function(m){if(m.st==="d"&&m.win&&m.sd)tnStat(m,-1)});S.tn=tnNew()}
   if(act==="tnpickgo"||act==="tnstartg"||act==="tnnxgo")liveAutoOn();
   var sy=window.scrollY,cr0=document.querySelector(".colR"),cst=cr0?cr0.scrollTop:0;save();render();window.scrollTo(0,sy);var cr1=document.querySelector(".colR");if(cr1)cr1.scrollTop=cst}
 document.addEventListener("change",function(e){var el=e.target;if(!el||!el.dataset)return;var T,k=+el.dataset.s;
@@ -1372,7 +1374,7 @@ function qtSwitch(TV){
   var nz=normalOn(),tbz=!S.ended;
   if(!TV)return'<div class="qt" role="group" aria-label="Mode"><button aria-pressed="true" data-act="noop">Queue</button><button data-act="tnopen"'+(nz?' disabled aria-disabled="true"':'')+' aria-pressed="false">\ud83c\udfc6 Tournament'+(PRO?"":" (Pro)")+'</button></div>'+(nz?'<p class="qtn">Tournament opens after you press End game.</p>':'');
   return'<div class="qt" role="group" aria-label="Mode"><button data-act="tnclose"'+(tbz?' disabled aria-disabled="true"':'')+' aria-pressed="false">Queue</button><button aria-pressed="true" data-act="noop">\ud83c\udfc6 Tournament</button></div>'+(tbz?'<p class="qtn">Tournament in progress. Press End game to finish it, then you can go back to Queue.</p>':'<p class="qtn">Tournament has ended. Tap Queue to go back to the normal queue.</p>')}
-function render(){
+function render(){tnCatch();
   trialBar();var av0=document.getElementById("appv");if(av0)av0.textContent="Version "+APPV;
   var tt0=LIC?"NetPlay Queue Pro":"NetPlay Queue",h10=document.getElementById("apptitle");if(h10)h10.innerHTML=sic()+esc(tt0);var gs=document.getElementById("gsel");if(gs)gs.innerHTML=gselHtml();document.title=tt0;applyLook();
   ens();if(window.applyLayout)applyLayout();var h="",TV=!!(S.tnv&&PRO);
